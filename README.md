@@ -12,6 +12,7 @@ Welcome to **Maze Runner**, a procedural 3D horror-puzzle game made with Unity. 
 | **Sprint** | `Left Shift` |
 | **Look** | Mouse |
 | **Interact** | Auto-pickup by walking over items |
+| **Quit** | `Escape` |
 
 ## 🌟 Features
 

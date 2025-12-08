@@ -41,6 +41,11 @@ public class GameManager : MonoBehaviour
             gameTime += Time.deltaTime;
             if (timerText) timerText.text = $"TIME: {gameTime:F2}";
         }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
     }
 
     public void StartGame()
