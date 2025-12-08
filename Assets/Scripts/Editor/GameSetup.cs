@@ -16,14 +16,21 @@ public class GameSetup : EditorWindow
             AssetDatabase.CreateFolder("Assets", "Prefabs");
             
         // 2. Create/Load Prefabs
+        
+        // Find User Materials
+        Material brickMat = FindMaterial("Brick");
+        Material dirtMat = FindMaterial("Dirt");
+
         GameObject wallPrefab = CreatePrefab("Wall", PrimitiveType.Cube, (go) => {
             go.transform.localScale = new Vector3(1, 1, 1);
             var obs = go.AddComponent<NavMeshObstacle>();
             obs.carving = true;
+            if (brickMat) go.GetComponent<Renderer>().sharedMaterial = brickMat;
         });
 
         GameObject floorPrefab = CreatePrefab("FloorTile", PrimitiveType.Plane, (go) => {
-            go.transform.localScale = new Vector3(0.4f, 1, 0.4f); // 4x4 approx if plane is 10units
+            go.transform.localScale = new Vector3(0.4f, 1, 0.4f); 
+            if (dirtMat) go.GetComponent<Renderer>().sharedMaterial = dirtMat;
         });
         
         GameObject playerPrefab = CreatePrefab("Player", PrimitiveType.Capsule, (go) => {
@@ -55,34 +62,36 @@ public class GameSetup : EditorWindow
             mapCam.SetActive(false); // Start disabled
         });
 
+        // Create Materials First
+        Material redMat = GetOrCreateMaterial("MinotaurRed", Color.red);
+        Material greenMat = GetOrCreateMaterial("EndGreen", Color.green);
+        Material blueGlow = GetOrCreateMaterial("SpeedBlue", Color.blue, true);
+        Material brownGlow = GetOrCreateMaterial("MapBrown", new Color(0.6f, 0.4f, 0.2f), true);
+
         GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Cylinder, (go) => {
             var agent = go.AddComponent<NavMeshAgent>();
             agent.speed = 4f;
             go.AddComponent<MinotaurAI>();
-            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard")); 
-            go.GetComponent<Renderer>().sharedMaterial.color = Color.red;
+            go.GetComponent<Renderer>().sharedMaterial = redMat;
         });
         
         GameObject endPrefab = CreatePrefab("EndTrigger", PrimitiveType.Cube, (go) => {
             go.GetComponent<BoxCollider>().isTrigger = true;
             go.AddComponent<EndTrigger>();
-            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard"));
-            go.GetComponent<Renderer>().sharedMaterial.color = Color.green;
+            go.GetComponent<Renderer>().sharedMaterial = greenMat;
         });
         
         GameObject speedPrefab = CreatePrefab("SpeedBoost", PrimitiveType.Sphere, (go) => {
             go.GetComponent<SphereCollider>().isTrigger = true;
             go.AddComponent<SpeedBoost>();
-            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard"));
-            go.GetComponent<Renderer>().sharedMaterial.color = Color.yellow;
+            go.GetComponent<Renderer>().sharedMaterial = blueGlow;
         });
 
         GameObject minimapPrefab = CreatePrefab("MinimapPickup", PrimitiveType.Cube, (go) => {
             go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
             go.GetComponent<BoxCollider>().isTrigger = true;
             go.AddComponent<MinimapPickup>();
-            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard"));
-            go.GetComponent<Renderer>().sharedMaterial.color = Color.blue;
+            go.GetComponent<Renderer>().sharedMaterial = brownGlow;
         });
 
         // 3. Setup Scene Objects
@@ -228,6 +237,39 @@ public class GameSetup : EditorWindow
     private static void SetupStats(string msg)
     {
         Debug.Log($"[MazeSetup] {msg}");
+    }
+
+    private static Material FindMaterial(string name)
+    {
+        string[] guids = AssetDatabase.FindAssets($"{name} t:Material");
+        if (guids.Length > 0)
+        {
+            return AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guids[0]));
+        }
+        return null; // Should fall back or error, or user can assign manually
+    }
+    
+    // ... existing CreatePrefab method ...
+    
+    private static Material GetOrCreateMaterial(string name, Color color, bool emissive = false)
+    {
+        string matPath = $"Assets/Materials/{name}.mat";
+        if (!Directory.Exists("Assets/Materials")) AssetDatabase.CreateFolder("Assets", "Materials");
+
+        Material mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+        if (!mat)
+        {
+            mat = new Material(Shader.Find("Standard"));
+            mat.color = color;
+            if (emissive)
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", color * 2f);
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+            AssetDatabase.CreateAsset(mat, matPath);
+        }
+        return mat;
     }
 
     [MenuItem("Maze Game/Clear Leaderboard Data")]
