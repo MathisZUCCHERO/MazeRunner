@@ -152,6 +152,36 @@ public class MazeGenerator : MonoBehaviour
 
         // Shuffle
         for (int i = 0; i < emptyCells.Count; i++) {
+            Vector2Int temp = emptyCells[i];
+            int randomIndex = rng.Next(i, emptyCells.Count);
+            emptyCells[i] = emptyCells[randomIndex];
+            emptyCells[randomIndex] = temp;
+        }
+
+        // Spawn Minimaps (User defined count)
+        if (minimapPrefab)
+        {
+            for (int i = 0; i < minimapCount; i++)
+            {
+                if (emptyCells.Count > 0)
+                {
+                    Vector2Int pos = emptyCells[0];
+                    Instantiate(minimapPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
+                    emptyCells.RemoveAt(0);
+                }
+            }
+        }
+
+        // Spawn Speed Boosts (User defined chance)
+        foreach (Vector2Int pos in emptyCells)
+        {
+            if (rng.NextDouble() < speedBoostChance)
+            {
+                if (speedBoostPrefab)
+                {
+                     Instantiate(speedBoostPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
+                }
+            }
         }
     }
 
