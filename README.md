@@ -1,3 +1,5 @@
+[![GitHub Release](https://img.shields.io/github/v/release/MathisZUCCHERO/MazeRunner?color=blue)](https://github.com/MathisZUCCHERO/MazeRunner/releases)
+
 # 🏃‍♂️ 3D Maze Runner
 
 Welcome to **Maze Runner**, a procedural 3D horror-puzzle game made with Unity. Escape the maze before the Minotaur catches you!
@@ -21,7 +23,15 @@ Welcome to **Maze Runner**, a procedural 3D horror-puzzle game made with Unity. 
 *   **Leaderboard**: Tracks the top 5 fastest escape times locally.
 *   **Dynamic Visuals**: Supports custom materials ("Brick", "Dirt") and emissions.
 
-## 🛠️ Setup & How to Play
+## � Screenshots
+
+![Gameplay](Screenshots/gameplay.jpg)
+*First-person view inside the maze with custom textures.*
+
+![Overview](Screenshots/overview.png)
+*Behold the complexity of the maze!*
+
+## �🛠️ Setup & How to Play
 
 1.  **Open Project**: Open this folder in Unity (2020.3 or later recommended).
 2.  **Setup Scene**:
@@ -44,3 +54,13 @@ You can tweak the game settings on the `MazeGenerator` GameObject in the scene:
 
 *   Scores are saved locally.
 *   To reset scores, click **Maze Game** -> **Clear Leaderboard Data** in the menu bar.
+
+---
+
+## 📥 Download Playable Build
+You can download the latest playable version here:
+
+👉 **[Download v1.0.0](https://github.com/MathisZUCCHERO/MazeRunner/releases/latest)**  
+(Windows x86_64 – Extract and run `MazeRunner.exe`)
+
+---
