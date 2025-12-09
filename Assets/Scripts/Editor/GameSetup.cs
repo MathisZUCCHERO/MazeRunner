@@ -130,7 +130,7 @@ public class GameSetup : EditorWindow
                 visual.name = "Visual";
                 
                 // Standard transforms
-                visual.transform.localPosition = new Vector3(0, 0, 0);
+                visual.transform.localPosition = new Vector3(0, -0.55f, 0);
                 visual.transform.localEulerAngles = Vector3.zero;
                 visual.transform.localScale = new Vector3(2, 2, 2);
 
