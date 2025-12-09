@@ -56,14 +56,14 @@ public class MinotaurAI : MonoBehaviour
         isReady = true;
         Debug.Log("[MinotaurAI] Ready!");
         
-        // Repath loop
+        // Repath loop - REVERTED TO STABLE LOOP
         while (enabled)
         {
             if (isReady && target != null && agent.isOnNavMesh)
             {
                 agent.SetDestination(target.position);
             }
-            yield return new WaitForSeconds(0.2f); // Repath 5 times a second
+            yield return new WaitForSeconds(0.1f); // Fast updates (10 times/sec) but not Every Frame
         }
     }
 

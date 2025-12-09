@@ -74,13 +74,13 @@ public class GameSetup : EditorWindow
         GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Capsule, (go) => {
             // 1. Setup Root (Agent + AI)
             var agent = go.AddComponent<NavMeshAgent>();
-            agent.speed = 9f; 
-            agent.radius = 0.35f; // Slimmer than bake settings (0.5) to avoid wall snagging
+            agent.speed = 20f; // ULTRA Speed
+            agent.radius = 0.35f; 
             agent.height = 2.0f;
-            agent.acceleration = 200f; // Instant acceleration - no "startup" lag
-            agent.angularSpeed = 720f; // Instant turning
-            agent.autoBraking = false; // Don't slow down near player, just hit them
-            agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance; // Don't avoid invisible ghosts, trust the Mesh
+            agent.acceleration = 420f; // Instant response
+            agent.angularSpeed = 400f; // Instant turning
+            agent.autoBraking = false; 
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
             
             go.AddComponent<MinotaurAI>();
             
