@@ -994,8 +994,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6079e17e46b80494c8ec322f73779dee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 40
-  height: 40
+  width: 30
+  height: 30
   cellSize: 3.5
   loopChance: 0.25
   wallHeight: 10

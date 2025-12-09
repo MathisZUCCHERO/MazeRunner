@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+using Unity.AI.Navigation;
+
 public class MazeGenerator : MonoBehaviour
 {
     [Header("Maze Settings")]
@@ -18,7 +20,7 @@ public class MazeGenerator : MonoBehaviour
 
     [Header("Spawn Settings")]
     [Range(0f, 1f)]
-    public float speedBoostChance = 0.02f; // 2% default
+    public float speedBoostChance = 0.01f; // 1% default
     public int minimapCount = 3; // 1 guaranteed default
 
     [Header("Prefabs")]
@@ -126,12 +128,24 @@ public class MazeGenerator : MonoBehaviour
         }
 
         // Units
-        if (playerPrefab) Instantiate(playerPrefab, new Vector3(0, 1.1f, 0), Quaternion.identity);
-        if (minotaurPrefab) Instantiate(minotaurPrefab, new Vector3((width/2)*cellSize, 1f, (height/2)*cellSize), Quaternion.identity);
-        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width-1)*cellSize, 1f, (height-1)*cellSize), Quaternion.identity);
+        if (playerPrefab) Instantiate(playerPrefab, new Vector3(0, 0.2f, 0), Quaternion.identity);
+        if (minotaurPrefab) Instantiate(minotaurPrefab, new Vector3((width/2)*cellSize, 0.2f, (height/2)*cellSize), Quaternion.identity);
+        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width-1)*cellSize, 0.2f, (height-1)*cellSize), Quaternion.identity);
 
         // Spawn Items
         SpawnItems();
+
+        // Bake NavMesh
+        NavMeshSurface surface = GetComponent<NavMeshSurface>();
+        if (surface)
+        {
+            surface.BuildNavMesh();
+            Debug.Log("[MazeGenerator] NavMesh Baked!");
+        }
+        else
+        {
+            Debug.LogError("[MazeGenerator] NavMeshSurface component missing!");
+        }
     }
 
     void SpawnItems()

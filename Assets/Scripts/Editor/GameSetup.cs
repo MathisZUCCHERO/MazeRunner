@@ -67,12 +67,152 @@ public class GameSetup : EditorWindow
         Material greenMat = GetOrCreateMaterial("EndGreen", Color.green);
         Material blueGlow = GetOrCreateMaterial("SpeedBlue", Color.blue, true);
         Material brownGlow = GetOrCreateMaterial("MapBrown", new Color(0.6f, 0.4f, 0.2f), true);
+        Material minotaurMat = GetOrCreateMaterial("Minotaur", Color.red);
+        
+        AudioClip minotaurGrowlClip = Resources.Load<AudioClip>("Sounds/minotaur_growl");
 
-        GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Cylinder, (go) => {
+        GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Capsule, (go) => {
+            // 1. Setup Root (Agent + AI)
             var agent = go.AddComponent<NavMeshAgent>();
             agent.speed = 4f;
+            agent.radius = 0.5f;
+            agent.height = 2.0f; 
             go.AddComponent<MinotaurAI>();
-            go.GetComponent<Renderer>().sharedMaterial = redMat;
+            
+            // Remove default visual (Cylinder/Capsule mesh) from root, keep Collider
+            Object.DestroyImmediate(go.GetComponent<MeshFilter>());
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>());
+            
+            // Adjust Root Collider
+            var collider = go.GetComponent<CapsuleCollider>();
+            if (collider)
+            {
+                collider.radius = 0.5f;
+                collider.height = 2.0f;
+                collider.center = new Vector3(0, 1f, 0);
+            }
+
+            // 2. Load & Setup Visual Model (Use Running.fbx)
+            string fbxPath = "Assets/Animations/Running.fbx";
+            
+            // STEP A: Ensure Import Settings (Loop Time) BEFORE Instantiation
+            // This prevents reimport invalidating the instantiated object
+            ModelImporter importer = AssetImporter.GetAtPath(fbxPath) as ModelImporter;
+            if (importer)
+            {
+                var clips = importer.defaultClipAnimations;
+                bool changed = false;
+                foreach (var clip in clips)
+                {
+                    if (!clip.loopTime)
+                    {
+                        clip.loopTime = true;
+                        changed = true;
+                    }
+                }
+                if (changed)
+                {
+                    importer.clipAnimations = clips;
+                    importer.SaveAndReimport();
+                    Debug.Log("Fixed Loop Time on Running.fbx");
+                }
+            }
+
+            GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            if (modelPrefab)
+            {
+                GameObject visual = Object.Instantiate(modelPrefab, go.transform);
+                visual.name = "Visual";
+                
+                // Standard transforms
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localEulerAngles = Vector3.zero;
+                visual.transform.localScale = Vector3.one;
+
+                // Apply Material
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sharedMaterial = minotaurMat;
+                
+                // 3. Setup Animation
+                // Ensure unique valid controller
+                string controllerPath = "Assets/Animations/Minotaur.controller";
+                
+                // Force check validity by loading
+                RuntimeAnimatorController runtimeController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath);
+                UnityEditor.Animations.AnimatorController ac = null;
+
+                if (runtimeController) ac = runtimeController as UnityEditor.Animations.AnimatorController;
+                
+                // If missing or invalid cast, create new
+                if (!ac)
+                {
+                    if (!Directory.Exists("Assets/Animations")) AssetDatabase.CreateFolder("Assets", "Animations");
+                    ac = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+                }
+
+                // Assign to Animator
+                Animator anim = visual.GetComponent<Animator>();
+                if (!anim) anim = visual.AddComponent<Animator>();
+                anim.applyRootMotion = false; 
+                anim.runtimeAnimatorController = ac;
+
+                // Setup Controller States
+                if (ac)
+                {
+                    // Find Animation Clip
+                    AnimationClip runningClip = null;
+                    Object[] assets = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
+                    foreach (Object obj in assets)
+                    {
+                        if (obj is AnimationClip clip && !obj.name.Contains("__preview__")) 
+                        {
+                            runningClip = clip;
+                            break;
+                        }
+                    }
+
+                    if (runningClip)
+                    {
+                        runningClip.wrapMode = WrapMode.Loop;
+
+                        // Ensure proper layer setup
+                        if (ac.layers.Length == 0) ac.AddLayer("Base Layer");
+                        
+                        var layer = ac.layers[0];
+                        var sm = layer.stateMachine;
+
+                        // Add State (Check if exists to avoid dupes on re-run, or clear)
+                        // Simple approach: Clear all and re-add to be sure
+                        sm.states = new UnityEditor.Animations.ChildAnimatorState[0];
+                        sm.entryTransitions = new UnityEditor.Animations.AnimatorTransition[0];
+                        sm.anyStateTransitions = new UnityEditor.Animations.AnimatorStateTransition[0];
+
+                        var defaultState = sm.AddState("Running");
+                        defaultState.motion = runningClip;
+                        sm.defaultState = defaultState;
+                        
+                        EditorUtility.SetDirty(ac);
+                        AssetDatabase.SaveAssets(); // Explicit Save
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError($"Minotaur FBX not found at {fbxPath}");
+                // Fallback debug visual
+                GameObject debugVis = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                debugVis.transform.parent = go.transform;
+                debugVis.transform.localPosition = new Vector3(0, 1, 0);
+                debugVis.GetComponent<Renderer>().sharedMaterial = redMat;
+            }
+            
+            // 4. Audio
+            var audioSource = go.AddComponent<AudioSource>();
+            audioSource.clip = minotaurGrowlClip;
+            audioSource.spatialBlend = 1f;
+            audioSource.playOnAwake = false;
+            audioSource.loop = true;
+            audioSource.volume = 0.7f;
         });
         
         GameObject endPrefab = CreatePrefab("EndTrigger", PrimitiveType.Cube, (go) => {
@@ -105,6 +245,11 @@ public class GameSetup : EditorWindow
         if (!mg) mg = new GameObject("MazeGenerator");
         MazeGenerator mgScript = mg.GetComponent<MazeGenerator>();
         if (!mgScript) mgScript = mg.AddComponent<MazeGenerator>();
+        
+        // Add NavMeshSurface for runtime baking
+        var surface = mg.GetComponent<Unity.AI.Navigation.NavMeshSurface>();
+        if (!surface) surface = mg.AddComponent<Unity.AI.Navigation.NavMeshSurface>();
+        surface.collectObjects = Unity.AI.Navigation.CollectObjects.Children;
         
         // Assign Prefabs
         mgScript.wallPrefab = wallPrefab;
