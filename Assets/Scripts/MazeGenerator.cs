@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+using Unity.AI.Navigation;
+
 public class MazeGenerator : MonoBehaviour
 {
     [Header("Maze Settings")]
     public int width = 40;
     public int height = 40;
-    public float cellSize = 3.5f; 
+    public float cellSize = 4f; 
     
     [Range(0f, 1f)]
     public float loopChance = 0.2f;
@@ -18,7 +20,7 @@ public class MazeGenerator : MonoBehaviour
 
     [Header("Spawn Settings")]
     [Range(0f, 1f)]
-    public float speedBoostChance = 0.02f; // 2% default
+    public float speedBoostChance = 0.01f; // 1% default
     public int minimapCount = 3; // 1 guaranteed default
 
     [Header("Prefabs")]
@@ -109,7 +111,7 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // 3. Instantiate
+        // 3. Instantiate Walls & Floors
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -125,10 +127,78 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // Units
-        if (playerPrefab) Instantiate(playerPrefab, new Vector3(0, 1.1f, 0), Quaternion.identity);
-        if (minotaurPrefab) Instantiate(minotaurPrefab, new Vector3((width/2)*cellSize, 1f, (height/2)*cellSize), Quaternion.identity);
-        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width-1)*cellSize, 1f, (height-1)*cellSize), Quaternion.identity);
+        // 4. Bake NavMesh (CRITICAL: Bake BEFORE spawning units to avoid hole-in-floor)
+        NavMeshSurface surface = GetComponent<NavMeshSurface>();
+        if (surface)
+        {
+            surface.BuildNavMesh();
+            Debug.Log("[MazeGenerator] NavMesh Baked!");
+        }
+        else
+        {
+            Debug.LogError("[MazeGenerator] NavMeshSurface component missing!");
+        }
+
+        // 5. Spawn Units (Now strictly on top of valid NavMesh)
+        GameObject playerObj = null;
+        if (playerPrefab) 
+        {
+            playerObj = Instantiate(playerPrefab, new Vector3(0, 0.2f, 0), Quaternion.identity);
+            playerObj.tag = "Player"; // Force Tag
+            playerObj.name = "Player_Spawned";
+        }
+        if (minotaurPrefab)
+        {
+            // Find a valid open cell near center
+            int cx = width / 2;
+            int cy = height / 2;
+            
+            // Search spiral for valid cell
+            Vector3 bestSpawnPos = Vector3.zero;
+            bool foundCell = false;
+            
+            for (int r = 0; r < 5; r++) 
+            {
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        int nx = cx + dx;
+                        int ny = cy + dy;
+                        if (nx > 0 && nx < width-1 && ny > 0 && ny < height-1)
+                        {
+                            bestSpawnPos = new Vector3(nx * cellSize, 0.2f, ny * cellSize);
+                            foundCell = true;
+                            // Check if this point is actually on the NavMesh
+                            NavMeshHit hit;
+                            if (NavMesh.SamplePosition(bestSpawnPos, out hit, 2.0f, NavMesh.AllAreas))
+                            {
+                                bestSpawnPos = hit.position;
+                                goto FoundSpawn;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            FoundSpawn:
+            if (foundCell)
+            {
+                GameObject minotaur = Instantiate(minotaurPrefab, bestSpawnPos, Quaternion.identity);
+                // Assign Player (Target)
+                MinotaurAI ai = minotaur.GetComponent<MinotaurAI>();
+                if (ai != null && playerObj != null)
+                {
+                     ai.target = playerObj.transform;
+                }
+                Debug.Log($"[MazeGenerator] Minotaur Spawned at {bestSpawnPos}");
+            }
+            else
+            {
+                Debug.LogError("[MazeGenerator] Could not find valid spawn for Minotaur!");
+            }
+        }
+        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width-1)*cellSize, 0.2f, (height-1)*cellSize), Quaternion.identity);
 
         // Spawn Items
         SpawnItems();

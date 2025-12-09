@@ -67,12 +67,142 @@ public class GameSetup : EditorWindow
         Material greenMat = GetOrCreateMaterial("EndGreen", Color.green);
         Material blueGlow = GetOrCreateMaterial("SpeedBlue", Color.blue, true);
         Material brownGlow = GetOrCreateMaterial("MapBrown", new Color(0.6f, 0.4f, 0.2f), true);
+        Material minotaurMat = GetOrCreateMaterial("Minotaur", Color.red);
 
-        GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Cylinder, (go) => {
+        AudioClip minotaurGrowlClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Minotaur_Growl.mp3");
+
+        GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Capsule, (go) => {
+            // 1. Setup Root (Agent + AI)
             var agent = go.AddComponent<NavMeshAgent>();
-            agent.speed = 4f;
+            agent.speed = 9f; 
+            agent.radius = 0.35f; // Slimmer than bake settings (0.5) to avoid wall snagging
+            agent.height = 2.0f;
+            agent.acceleration = 200f; // Instant acceleration - no "startup" lag
+            agent.angularSpeed = 720f; // Instant turning
+            agent.autoBraking = false; // Don't slow down near player, just hit them
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance; // Don't avoid invisible ghosts, trust the Mesh
+            
             go.AddComponent<MinotaurAI>();
-            go.GetComponent<Renderer>().sharedMaterial = redMat;
+            
+            // Remove default visual (Cylinder/Capsule mesh) from root, keep Collider
+            Object.DestroyImmediate(go.GetComponent<MeshFilter>());
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>());
+            
+            // Adjust Root Collider
+            var collider = go.GetComponent<CapsuleCollider>();
+            if (collider)
+            {
+                collider.radius = 0.3f; // Slightly smaller than Agent Radius
+                collider.height = 2.0f;
+                collider.center = new Vector3(0, 1f, 0);
+                collider.isTrigger = true; // Make it a trigger so it doesn't physically collide with walls (Agent handles that)
+            }
+
+            // 2. Load & Setup Visual Model (Use Running.fbx)
+            string fbxPath = "Assets/Animations/Running.fbx";
+            
+            // STEP A: Ensure Import Settings (Loop Time) BEFORE Instantiation
+            ModelImporter importer = AssetImporter.GetAtPath(fbxPath) as ModelImporter;
+            if (importer)
+            {
+                var clips = importer.defaultClipAnimations;
+                bool changed = false;
+                foreach (var clip in clips)
+                {
+                    if (!clip.loopTime)
+                    {
+                        clip.loopTime = true;
+                        changed = true;
+                    }
+                }
+                if (changed)
+                {
+                    importer.clipAnimations = clips;
+                    importer.SaveAndReimport();
+                    Debug.Log("Fixed Loop Time on Running.fbx");
+                }
+            }
+
+            GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            if (modelPrefab)
+            {
+                GameObject visual = Object.Instantiate(modelPrefab, go.transform);
+                visual.name = "Visual";
+                
+                // Standard transforms
+                visual.transform.localPosition = new Vector3(0, 0, 0);
+                visual.transform.localEulerAngles = Vector3.zero;
+                visual.transform.localScale = new Vector3(2, 2, 2);
+
+                // Apply Material (search for renderers)
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sharedMaterial = minotaurMat;
+                
+                // SAFETY: Destroy any colliders on the visual model to prevent Agent interference
+                var colliders = visual.GetComponentsInChildren<Collider>();
+                foreach (var c in colliders) Object.DestroyImmediate(c);
+                
+                // 3. Setup Animation
+                string controllerPath = "Assets/Animations/Minotaur.controller";
+                RuntimeAnimatorController runtimeController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath);
+                UnityEditor.Animations.AnimatorController ac = null;
+                if (runtimeController) ac = runtimeController as UnityEditor.Animations.AnimatorController;
+                
+                if (!ac)
+                {
+                    if (!Directory.Exists("Assets/Animations")) AssetDatabase.CreateFolder("Assets", "Animations");
+                    ac = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+                }
+
+                Animator anim = visual.GetComponent<Animator>();
+                if (!anim) anim = visual.AddComponent<Animator>();
+                anim.applyRootMotion = false; 
+                anim.runtimeAnimatorController = ac;
+
+                if (ac)
+                {
+                    AnimationClip runningClip = null;
+                    Object[] assets = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
+                    foreach (Object obj in assets)
+                    {
+                        if (obj is AnimationClip clip && !obj.name.Contains("__preview__")) 
+                        {
+                            runningClip = clip;
+                            break;
+                        }
+                    }
+
+                    if (runningClip)
+                    {
+                        // Clean Layers
+                        while (ac.layers.Length > 0) ac.RemoveLayer(0);
+                        ac.AddLayer("Base Layer");
+                        
+                        var layer = ac.layers[0];
+                        var sm = layer.stateMachine;
+                        var defaultState = sm.AddState("Running");
+                        defaultState.motion = runningClip;
+                        sm.defaultState = defaultState;
+                        
+                        EditorUtility.SetDirty(ac);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError($"Minotaur FBX not found at {fbxPath}");
+                GameObject debugVis = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                debugVis.transform.parent = go.transform;
+                debugVis.transform.localPosition = new Vector3(0, 1, 0);
+            }
+            
+            // 4. Audio
+            var audioSource = go.AddComponent<AudioSource>();
+            audioSource.clip = minotaurGrowlClip;
+            audioSource.spatialBlend = 1f;
+            audioSource.playOnAwake = true;
+            audioSource.loop = true;
+            audioSource.volume = 0.7f;
         });
         
         GameObject endPrefab = CreatePrefab("EndTrigger", PrimitiveType.Cube, (go) => {
@@ -106,6 +236,11 @@ public class GameSetup : EditorWindow
         MazeGenerator mgScript = mg.GetComponent<MazeGenerator>();
         if (!mgScript) mgScript = mg.AddComponent<MazeGenerator>();
         
+        // Add NavMeshSurface for runtime baking
+        var surface = mg.GetComponent<Unity.AI.Navigation.NavMeshSurface>();
+        if (!surface) surface = mg.AddComponent<Unity.AI.Navigation.NavMeshSurface>();
+        surface.collectObjects = Unity.AI.Navigation.CollectObjects.Children;
+        
         // Assign Prefabs
         mgScript.wallPrefab = wallPrefab;
         mgScript.floorPrefab = floorPrefab;
@@ -115,11 +250,11 @@ public class GameSetup : EditorWindow
         mgScript.speedBoostPrefab = speedPrefab;
         mgScript.minimapPrefab = minimapPrefab;
         mgScript.minimapPrefab = minimapPrefab;
-        mgScript.cellSize = 3.5f;
+        mgScript.cellSize = 4f;
         mgScript.width = 40;
         mgScript.height = 40;
         mgScript.wallHeight = 10.0f;
-        mgScript.speedBoostChance = 0.02f;
+        mgScript.speedBoostChance = 0.01f;
         mgScript.minimapCount = 1;
 
         // UI

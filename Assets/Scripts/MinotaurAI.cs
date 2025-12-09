@@ -1,56 +1,83 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class MinotaurAI : MonoBehaviour
 {
-    [Header("Settings")]
-    public Transform target; // The Player
-    public float catchDistance = 1.5f;
-    public float patrolSpeed = 3.5f;
-    public float chaseSpeed = 6.0f;
-
+    [Header("Core")]
+    public Transform target;
+    public float catchDistance = 2.0f;
+    
+    // Internal
     private NavMeshAgent agent;
+    private bool isReady = false;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         
-        // Auto-find player if not assigned
+        // Start Initialization Routine
+        StartCoroutine(InitializeRoutine());
+    }
+    
+    IEnumerator InitializeRoutine()
+    {
+        // wait for end of frame to ensure all Start() methods ran
+        yield return new WaitForEndOfFrame();
+        
+        // Disable Animator Root Motion if present
+        Animator anim = GetComponentInChildren<Animator>();
+        if (anim) anim.applyRootMotion = false;
+        
+        // Find Target if missing
         if (target == null)
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null) target = player.transform;
+            var p = GameObject.FindGameObjectWithTag("Player");
+            if (p) target = p.transform;
+            if (target == null && Camera.main) target = Camera.main.transform;
         }
-
-        agent.speed = chaseSpeed;
+        
+        // Ensure Agent is on NavMesh
+        if (agent != null && !agent.isOnNavMesh)
+        {
+            Debug.LogWarning("[MinotaurAI] Agent not on NavMesh, attempting Warp...");
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                Debug.LogError("[MinotaurAI] FAILED to place agent on NavMesh.");
+            }
+        }
+        
+        isReady = true;
+        Debug.Log("[MinotaurAI] Ready!");
+        
+        // Repath loop
+        while (enabled)
+        {
+            if (isReady && target != null && agent.isOnNavMesh)
+            {
+                agent.SetDestination(target.position);
+            }
+            yield return new WaitForSeconds(0.2f); // Repath 5 times a second
+        }
     }
 
     void Update()
     {
-        if (target == null) return;
-
-        // Simple State Machine: Always Chase for this MVP
-        // In a full game, you might add Patrol vs Chase logic based on distance/vision
+        if (!isReady || target == null) return;
         
-        agent.SetDestination(target.position);
-
-        // Check if caught
-        if (!agent.pathPending && agent.remainingDistance <= catchDistance)
+        // Kill Check
+        float d = Vector3.Distance(transform.position, target.position);
+        if (d < catchDistance)
         {
-            CatchPlayer();
-        }
-    }
-
-    void CatchPlayer()
-    {
-        // Prevent multiple calls
-        enabled = false; 
-        agent.isStopped = true;
-        
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.GameOver();
+            Debug.Log("Minotaur Caught Player!");
+            if (GameManager.Instance) GameManager.Instance.GameOver();
+            enabled = false;
         }
     }
 }
