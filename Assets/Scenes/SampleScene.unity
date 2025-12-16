@@ -1080,6 +1080,7 @@ MonoBehaviour:
   loopChance: 0.25
   wallHeight: 10
   speedBoostChance: 0.01
+  flashbangChance: 0.01
   minimapCount: 1
   wallPrefab: {fileID: 4955643050293530190, guid: 663cb4e11f620bb4e8372ebfec427ece, type: 3}
   floorPrefab: {fileID: 3281621317569159246, guid: dd8c5eb5979fadb48a6c153847aa73b7, type: 3}
@@ -1087,6 +1088,7 @@ MonoBehaviour:
   minotaurPrefab: {fileID: 1217495613422725448, guid: 2ddbe76a4c5c35841826444447c209de, type: 3}
   endTriggerPrefab: {fileID: 989412785243394459, guid: b805effe6fed7574cac39048cd3804b9, type: 3}
   speedBoostPrefab: {fileID: 6735217053559382608, guid: d6f22872e9d5f6347b7ac0d6eac112b3, type: 3}
+  flashbangPrefab: {fileID: 6735217053559382608, guid: 5e9ce3ce3f2209b4eba1c2ef50e6d0c2, type: 3}
   minimapPrefab: {fileID: 1786485073957428813, guid: 9c70a1d01e10088479c8691165daa25e, type: 3}
 --- !u!4 &1900986641
 Transform:

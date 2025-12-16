@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-
 using Unity.AI.Navigation;
 
 public class MazeGenerator : MonoBehaviour
@@ -21,7 +20,9 @@ public class MazeGenerator : MonoBehaviour
     [Header("Spawn Settings")]
     [Range(0f, 1f)]
     public float speedBoostChance = 0.01f; // 1% default
-    public int minimapCount = 3; // 1 guaranteed default
+    [Range(0f, 1f)]
+    public float flashbangChance = 0.01f;  // 1% default (NOUVEAU)
+    public int minimapCount = 3; 
 
     [Header("Prefabs")]
     public GameObject wallPrefab;
@@ -29,7 +30,8 @@ public class MazeGenerator : MonoBehaviour
     public GameObject playerPrefab;
     public GameObject minotaurPrefab;
     public GameObject endTriggerPrefab; 
-    public GameObject speedBoostPrefab; 
+    public GameObject speedBoostPrefab;
+    public GameObject flashbangPrefab; // (NOUVEAU)
     public GameObject minimapPrefab;
 
     private System.Random rng = new System.Random();
@@ -127,7 +129,7 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // 4. Bake NavMesh (CRITICAL: Bake BEFORE spawning units to avoid hole-in-floor)
+        // 4. Bake NavMesh
         NavMeshSurface surface = GetComponent<NavMeshSurface>();
         if (surface)
         {
@@ -139,21 +141,19 @@ public class MazeGenerator : MonoBehaviour
             Debug.LogError("[MazeGenerator] NavMeshSurface component missing!");
         }
 
-        // 5. Spawn Units (Now strictly on top of valid NavMesh)
+        // 5. Spawn Units
         GameObject playerObj = null;
         if (playerPrefab) 
         {
             playerObj = Instantiate(playerPrefab, new Vector3(0, 0.2f, 0), Quaternion.identity);
-            playerObj.tag = "Player"; // Force Tag
+            playerObj.tag = "Player"; 
             playerObj.name = "Player_Spawned";
         }
         if (minotaurPrefab)
         {
-            // Find a valid open cell near center
             int cx = width / 2;
             int cy = height / 2;
             
-            // Search spiral for valid cell
             Vector3 bestSpawnPos = Vector3.zero;
             bool foundCell = false;
             
@@ -169,7 +169,6 @@ public class MazeGenerator : MonoBehaviour
                         {
                             bestSpawnPos = new Vector3(nx * cellSize, 0.2f, ny * cellSize);
                             foundCell = true;
-                            // Check if this point is actually on the NavMesh
                             NavMeshHit hit;
                             if (NavMesh.SamplePosition(bestSpawnPos, out hit, 2.0f, NavMesh.AllAreas))
                             {
@@ -185,11 +184,10 @@ public class MazeGenerator : MonoBehaviour
             if (foundCell)
             {
                 GameObject minotaur = Instantiate(minotaurPrefab, bestSpawnPos, Quaternion.identity);
-                // Assign Player (Target)
                 MinotaurAI ai = minotaur.GetComponent<MinotaurAI>();
                 if (ai != null && playerObj != null)
                 {
-                     ai.target = playerObj.transform;
+                      ai.target = playerObj.transform;
                 }
                 Debug.Log($"[MazeGenerator] Minotaur Spawned at {bestSpawnPos}");
             }
@@ -228,7 +226,7 @@ public class MazeGenerator : MonoBehaviour
             emptyCells[randomIndex] = temp;
         }
 
-        // Spawn Minimaps (User defined count)
+        // 1. Spawn Minimaps
         if (minimapPrefab)
         {
             for (int i = 0; i < minimapCount; i++)
@@ -242,14 +240,25 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // Spawn Speed Boosts (User defined chance)
+        // 2. Spawn Random Items (Speed Boosts OR Flashbangs)
         foreach (Vector2Int pos in emptyCells)
         {
-            if (rng.NextDouble() < speedBoostChance)
+            double roll = rng.NextDouble();
+
+            // Chance pour Speed Boost
+            if (roll < speedBoostChance)
             {
                 if (speedBoostPrefab)
                 {
-                     Instantiate(speedBoostPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
+                      Instantiate(speedBoostPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
+                }
+            }
+            // Chance pour Flashbang (si pas de speed boost)
+            else if (rng.NextDouble() < flashbangChance)
+            {
+                if (flashbangPrefab)
+                {
+                      Instantiate(flashbangPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
                 }
             }
         }

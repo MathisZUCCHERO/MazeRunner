@@ -91,4 +91,32 @@ public class MinotaurAI : MonoBehaviour
         if (GameManager.Instance) GameManager.Instance.GameOver();
         enabled = false;
     }
+    public void ApplyStun(float duration)
+    {
+        StartCoroutine(StunRoutine(duration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isReady = false; 
+        
+        if(agent != null && agent.isOnNavMesh) 
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+
+        Debug.Log($"[MinotaurAI] STUNNED for {duration} seconds!");
+
+        yield return new WaitForSeconds(duration);
+
+        if(agent != null && agent.isOnNavMesh) 
+        {
+            agent.isStopped = false;
+        }
+        
+        isReady = true;
+        
+        lastPathUpdateTime = 0f; 
+    }
 }
