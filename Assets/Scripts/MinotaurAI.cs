@@ -8,76 +8,87 @@ public class MinotaurAI : MonoBehaviour
     [Header("Core")]
     public Transform target;
     public float catchDistance = 2.0f;
-    
+
+    [Header("Pathfinding Settings")]
+    public float pathUpdateRate = 0.2f; 
+    public float targetMoveThreshold = 0.5f;
+
     // Internal
     private NavMeshAgent agent;
     private bool isReady = false;
+    private float lastPathUpdateTime = 0f;
+    private Vector3 lastTargetPosition;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        
-        // Start Initialization Routine
+        agent.autoBraking = false; 
         StartCoroutine(InitializeRoutine());
     }
-    
+
     IEnumerator InitializeRoutine()
     {
-        // wait for end of frame to ensure all Start() methods ran
         yield return new WaitForEndOfFrame();
-        
-        // Disable Animator Root Motion if present
+
         Animator anim = GetComponentInChildren<Animator>();
         if (anim) anim.applyRootMotion = false;
-        
-        // Find Target if missing
+
         if (target == null)
         {
             var p = GameObject.FindGameObjectWithTag("Player");
             if (p) target = p.transform;
             if (target == null && Camera.main) target = Camera.main.transform;
         }
-        
-        // Ensure Agent is on NavMesh
+
         if (agent != null && !agent.isOnNavMesh)
         {
-            Debug.LogWarning("[MinotaurAI] Agent not on NavMesh, attempting Warp...");
             NavMeshHit hit;
             if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
-            {
                 agent.Warp(hit.position);
-            }
-            else
-            {
-                Debug.LogError("[MinotaurAI] FAILED to place agent on NavMesh.");
-            }
         }
-        
+
+        if (target != null) lastTargetPosition = target.position;
+
         isReady = true;
         Debug.Log("[MinotaurAI] Ready!");
-        
-        // Repath loop - REVERTED TO STABLE LOOP
-        while (enabled)
-        {
-            if (isReady && target != null && agent.isOnNavMesh)
-            {
-                agent.SetDestination(target.position);
-            }
-            yield return new WaitForSeconds(0.1f); // Fast updates (10 times/sec) but not Every Frame
-        }
     }
 
     void Update()
     {
         if (!isReady || target == null) return;
-        
-        // Kill Check
-        float d = Vector3.Distance(transform.position, target.position);
-        if (d < catchDistance)
+
+        // --- 1. Logique de Déplacement ---
+        if (Time.time >= lastPathUpdateTime + pathUpdateRate)
         {
-            Debug.Log("Minotaur Caught Player!");
-            if (GameManager.Instance) GameManager.Instance.GameOver();
-            enabled = false;
+            if (!agent.pathPending)
+            {
+                float distanceMoved = Vector3.Distance(target.position, lastTargetPosition);
+                // Si remainingDistance est très petit, c'est qu'on a fini le chemin précédent
+                bool reachedDestination = agent.remainingDistance < 0.5f;
+
+                if (distanceMoved > targetMoveThreshold || !agent.hasPath || reachedDestination)
+                {
+                    agent.SetDestination(target.position);
+                    lastTargetPosition = target.position;
+                    lastPathUpdateTime = Time.time;
+                }
+            }
         }
+
+        if (!agent.pathPending && agent.hasPath && agent.remainingDistance <= catchDistance)
+        {
+            Debug.Log("Minotaur is at " + agent.remainingDistance + " the catchDistance is " + catchDistance);
+             CatchPlayer();
+        }
+    }
+
+    void CatchPlayer()
+    {
+        Debug.Log("Minotaur Caught Player!");
+        isReady = false; 
+        agent.isStopped = true; 
+        
+        if (GameManager.Instance) GameManager.Instance.GameOver();
+        enabled = false;
     }
 }
