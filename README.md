@@ -21,6 +21,7 @@ Welcome to **Maze Runner**, a procedural 3D horror-puzzle game made with Unity. 
 *   **Power-ups**:
     *   ⚡ **Speed Boost**: Temporarily increases movement speed.
     *   🗺️ **Minimap**: Reveals a top-down view of the maze in the HUD.
+    *   🔆 **Flashbang**: Temporarily stun the minotaur.
 *   **Leaderboard**: Tracks the top 5 fastest escape times locally.
 *   **Dynamic Visuals**: Supports custom materials ("Brick", "Dirt") and emissions.
 

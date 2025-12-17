@@ -9,29 +9,36 @@ public class MazeGenerator : MonoBehaviour
     [Header("Maze Settings")]
     public int width = 40;
     public int height = 40;
-    public float cellSize = 4f; 
-    
+    public float cellSize = 4f;
+
     [Range(0f, 1f)]
     public float loopChance = 0.2f;
 
     [Header("Visuals")]
     public float wallHeight = 10.0f;
 
+    [Header("Lighting")]
+    public GameObject torchPrefab;
+    [Range(0f, 1f)]
+    public float torchChance = 0.15f;
+    public float torchHeight = 2.5f;
+    public float torchWallOffset = 0.35f;
+
     [Header("Spawn Settings")]
     [Range(0f, 1f)]
-    public float speedBoostChance = 0.01f; // 1% default
+    public float speedBoostChance = 0.01f;
     [Range(0f, 1f)]
-    public float flashbangChance = 0.01f;  // 1% default (NOUVEAU)
-    public int minimapCount = 3; 
+    public float flashbangChance = 0.01f;
+    public int minimapCount = 3;
 
     [Header("Prefabs")]
     public GameObject wallPrefab;
     public GameObject floorPrefab;
     public GameObject playerPrefab;
     public GameObject minotaurPrefab;
-    public GameObject endTriggerPrefab; 
+    public GameObject endTriggerPrefab;
     public GameObject speedBoostPrefab;
-    public GameObject flashbangPrefab; // (NOUVEAU)
+    public GameObject flashbangPrefab;
     public GameObject minimapPrefab;
 
     private System.Random rng = new System.Random();
@@ -54,17 +61,15 @@ public class MazeGenerator : MonoBehaviour
 
     void GenerateAndBuild()
     {
-        // Cleanup old maze
         foreach (Transform child in transform) { Destroy(child.gameObject); }
 
         grid = new Cell[width, height];
         for (int x = 0; x < width; x++)
-        for (int y = 0; y < height; y++)
-        {
-            grid[x, y] = new Cell { visited = false, topWall = true, bottomWall = true, leftWall = true, rightWall = true };
-        }
+            for (int y = 0; y < height; y++)
+            {
+                grid[x, y] = new Cell { visited = false, topWall = true, bottomWall = true, leftWall = true, rightWall = true };
+            }
 
-        // 1. Recursive Backtracker
         Stack<Vector2Int> cellStack = new Stack<Vector2Int>();
         Vector2Int current = new Vector2Int(0, 0);
         grid[current.x, current.y].visited = true;
@@ -93,7 +98,6 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // 2. Add Loops
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -103,7 +107,7 @@ public class MazeGenerator : MonoBehaviour
                     List<Vector2Int> neighbors = new List<Vector2Int>();
                     if (x + 1 < width && grid[x, y].rightWall) neighbors.Add(new Vector2Int(x + 1, y));
                     if (y + 1 < height && grid[x, y].topWall) neighbors.Add(new Vector2Int(x, y + 1));
-                    
+
                     if (neighbors.Count > 0)
                     {
                         Vector2Int target = neighbors[rng.Next(neighbors.Count)];
@@ -113,179 +117,142 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        // 3. Instantiate Walls & Floors
-        for (int x = 0; x < width; x++)
+    for (int x = 0; x < width; x++)
+    {
+        for (int y = 0; y < height; y++)
         {
-            for (int y = 0; y < height; y++)
-            {
-                Vector3 cellPos = new Vector3(x * cellSize, 0, y * cellSize);
-                
-                if (floorPrefab) Instantiate(floorPrefab, cellPos, Quaternion.identity, transform);
+            Vector3 cellPos = new Vector3(x * cellSize, 0, y * cellSize);
 
-                if (grid[x, y].topWall) SpawnWall(cellPos + new Vector3(0, 0, cellSize/2), Quaternion.identity);
-                if (grid[x, y].bottomWall) SpawnWall(cellPos + new Vector3(0, 0, -cellSize/2), Quaternion.identity);
-                if (grid[x, y].rightWall) SpawnWall(cellPos + new Vector3(cellSize/2, 0, 0), Quaternion.Euler(0, 90, 0));
-                if (grid[x, y].leftWall) SpawnWall(cellPos + new Vector3(-cellSize/2, 0, 0), Quaternion.Euler(0, 90, 0));
-            }
+            if (floorPrefab) Instantiate(floorPrefab, cellPos, Quaternion.identity, transform);
+
+            if (grid[x, y].topWall) SpawnWall(cellPos + new Vector3(0, 0, cellSize/2), Quaternion.identity);
+            if (grid[x, y].rightWall) SpawnWall(cellPos + new Vector3(cellSize/2, 0, 0), Quaternion.Euler(0, 90, 0));
+
+            if (y == 0 && grid[x, y].bottomWall) SpawnWall(cellPos + new Vector3(0, 0, -cellSize/2), Quaternion.identity);
+
+            if (x == 0 && grid[x, y].leftWall) SpawnWall(cellPos + new Vector3(-cellSize/2, 0, 0), Quaternion.Euler(0, 90, 0));
         }
+    }
 
-        // 4. Bake NavMesh
         NavMeshSurface surface = GetComponent<NavMeshSurface>();
         if (surface)
         {
             surface.BuildNavMesh();
-            Debug.Log("[MazeGenerator] NavMesh Baked!");
-        }
-        else
-        {
-            Debug.LogError("[MazeGenerator] NavMeshSurface component missing!");
         }
 
-        // 5. Spawn Units
+        SpawnUnitsAndItems();
+    }
+
+    void SpawnUnitsAndItems()
+    {
         GameObject playerObj = null;
-        if (playerPrefab) 
+        if (playerPrefab)
         {
             playerObj = Instantiate(playerPrefab, new Vector3(0, 0.2f, 0), Quaternion.identity);
-            playerObj.tag = "Player"; 
+            playerObj.tag = "Player";
             playerObj.name = "Player_Spawned";
         }
+
         if (minotaurPrefab)
         {
-            int cx = width / 2;
-            int cy = height / 2;
-            
-            Vector3 bestSpawnPos = Vector3.zero;
-            bool foundCell = false;
-            
-            for (int r = 0; r < 5; r++) 
+            SpawnMinotaur(playerObj);
+        }
+
+        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width - 1) * cellSize, 0.2f, (height - 1) * cellSize), Quaternion.identity);
+
+        SpawnItems();
+    }
+
+    void SpawnMinotaur(GameObject playerObj)
+    {
+        int cx = width / 2;
+        int cy = height / 2;
+        Vector3 bestSpawnPos = Vector3.zero;
+        bool foundCell = false;
+
+        for (int r = 0; r < 5; r++)
+        {
+            for (int dx = -r; dx <= r; dx++)
             {
-                for (int dx = -r; dx <= r; dx++)
+                for (int dy = -r; dy <= r; dy++)
                 {
-                    for (int dy = -r; dy <= r; dy++)
+                    int nx = cx + dx;
+                    int ny = cy + dy;
+                    if (nx > 0 && nx < width - 1 && ny > 0 && ny < height - 1)
                     {
-                        int nx = cx + dx;
-                        int ny = cy + dy;
-                        if (nx > 0 && nx < width-1 && ny > 0 && ny < height-1)
+                        bestSpawnPos = new Vector3(nx * cellSize, 0.2f, ny * cellSize);
+                        foundCell = true;
+                        NavMeshHit hit;
+                        if (NavMesh.SamplePosition(bestSpawnPos, out hit, 2.0f, NavMesh.AllAreas))
                         {
-                            bestSpawnPos = new Vector3(nx * cellSize, 0.2f, ny * cellSize);
-                            foundCell = true;
-                            NavMeshHit hit;
-                            if (NavMesh.SamplePosition(bestSpawnPos, out hit, 2.0f, NavMesh.AllAreas))
-                            {
-                                bestSpawnPos = hit.position;
-                                goto FoundSpawn;
-                            }
+                            bestSpawnPos = hit.position;
+                            goto FoundSpawn;
                         }
                     }
                 }
             }
-            
-            FoundSpawn:
-            if (foundCell)
-            {
-                GameObject minotaur = Instantiate(minotaurPrefab, bestSpawnPos, Quaternion.identity);
-                MinotaurAI ai = minotaur.GetComponent<MinotaurAI>();
-                if (ai != null && playerObj != null)
-                {
-                      ai.target = playerObj.transform;
-                }
-                Debug.Log($"[MazeGenerator] Minotaur Spawned at {bestSpawnPos}");
-            }
-            else
-            {
-                Debug.LogError("[MazeGenerator] Could not find valid spawn for Minotaur!");
-            }
         }
-        if (endTriggerPrefab) Instantiate(endTriggerPrefab, new Vector3((width-1)*cellSize, 0.2f, (height-1)*cellSize), Quaternion.identity);
 
-        // Spawn Items
-        SpawnItems();
+        FoundSpawn:
+        if (foundCell)
+        {
+            GameObject minotaur = Instantiate(minotaurPrefab, bestSpawnPos, Quaternion.identity);
+            MinotaurAI ai = minotaur.GetComponent<MinotaurAI>();
+            if (ai != null && playerObj != null) ai.target = playerObj.transform;
+        }
     }
 
     void SpawnItems()
     {
         List<Vector2Int> emptyCells = new List<Vector2Int>();
-        
-        // Collect valid empty cells
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                 // Avoid start/end zones
-                 if (x < 3 && y < 3) continue;
-                 if (x > width - 3 && y > height - 3) continue;
-                 emptyCells.Add(new Vector2Int(x, y));
+                if (x < 3 && y < 3) continue;
+                if (x > width - 3 && y > height - 3) continue;
+                emptyCells.Add(new Vector2Int(x, y));
             }
         }
 
-        // Shuffle
-        for (int i = 0; i < emptyCells.Count; i++) {
+        for (int i = 0; i < emptyCells.Count; i++)
+        {
             Vector2Int temp = emptyCells[i];
             int randomIndex = rng.Next(i, emptyCells.Count);
             emptyCells[i] = emptyCells[randomIndex];
             emptyCells[randomIndex] = temp;
         }
 
-        // 1. Spawn Minimaps
         if (minimapPrefab)
         {
-            for (int i = 0; i < minimapCount; i++)
+            for (int i = 0; i < minimapCount && emptyCells.Count > 0; i++)
             {
-                if (emptyCells.Count > 0)
-                {
-                    Vector2Int pos = emptyCells[0];
-                    Instantiate(minimapPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
-                    emptyCells.RemoveAt(0);
-                }
+                Vector2Int pos = emptyCells[0];
+                Instantiate(minimapPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
+                emptyCells.RemoveAt(0);
             }
         }
 
-        // 2. Spawn Random Items (Speed Boosts OR Flashbangs)
         foreach (Vector2Int pos in emptyCells)
         {
             double roll = rng.NextDouble();
-
-            // Chance pour Speed Boost
-            if (roll < speedBoostChance)
+            if (roll < speedBoostChance && speedBoostPrefab)
             {
-                if (speedBoostPrefab)
-                {
-                      Instantiate(speedBoostPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
-                }
+                Instantiate(speedBoostPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
             }
-            // Chance pour Flashbang (si pas de speed boost)
-            else if (rng.NextDouble() < flashbangChance)
+            else if (rng.NextDouble() < flashbangChance && flashbangPrefab)
             {
-                if (flashbangPrefab)
-                {
-                      Instantiate(flashbangPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
-                }
+                Instantiate(flashbangPrefab, new Vector3(pos.x * cellSize, 0.5f, pos.y * cellSize), Quaternion.identity);
             }
         }
     }
 
     void RemoveWall(Vector2Int current, Vector2Int next)
     {
-        if (next.x > current.x) // Right
-        {
-            grid[current.x, current.y].rightWall = false;
-            grid[next.x, next.y].leftWall = false;
-        }
-        else if (next.x < current.x) // Left
-        {
-            grid[current.x, current.y].leftWall = false;
-            grid[next.x, next.y].rightWall = false;
-        }
-        else if (next.y > current.y) // Up
-        {
-            grid[current.x, current.y].topWall = false;
-            grid[next.x, next.y].bottomWall = false;
-        }
-        else if (next.y < current.y) // Down
-        {
-            grid[current.x, current.y].bottomWall = false;
-            grid[next.x, next.y].topWall = false;
-        }
+        if (next.x > current.x) { grid[current.x, current.y].rightWall = false; grid[next.x, next.y].leftWall = false; }
+        else if (next.x < current.x) { grid[current.x, current.y].leftWall = false; grid[next.x, next.y].rightWall = false; }
+        else if (next.y > current.y) { grid[current.x, current.y].topWall = false; grid[next.x, next.y].bottomWall = false; }
+        else if (next.y < current.y) { grid[current.x, current.y].bottomWall = false; grid[next.x, next.y].topWall = false; }
     }
 
     void SpawnWall(Vector3 pos, Quaternion rot)
@@ -294,6 +261,12 @@ public class MazeGenerator : MonoBehaviour
         {
             GameObject w = Instantiate(wallPrefab, pos, rot, transform);
             w.transform.localScale = new Vector3(cellSize, wallHeight, 0.5f);
+
+            if (torchPrefab != null && rng.NextDouble() < torchChance)
+            {
+                Vector3 torchPos = pos + (Vector3.up * torchHeight) + (rot * Vector3.forward * -torchWallOffset);
+                Instantiate(torchPrefab, torchPos, rot, transform);
+            }
         }
     }
 }
