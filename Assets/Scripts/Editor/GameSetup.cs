@@ -67,7 +67,10 @@ public class GameSetup : EditorWindow
         Material greenMat = GetOrCreateMaterial("EndGreen", Color.green);
         Material blueGlow = GetOrCreateMaterial("SpeedBlue", Color.blue, true);
         Material brownGlow = GetOrCreateMaterial("MapBrown", new Color(0.6f, 0.4f, 0.2f), true);
+        Material whiteGlow = GetOrCreateMaterial("Flash", Color.white, true);
         Material minotaurMat = GetOrCreateMaterial("Minotaur", Color.red);
+        Material compassMat = GetOrCreateMaterial("Compass", Color.yellow);
+        Material speedBoostMat = GetOrCreateMaterial("SpeedBoost", Color.yellow);
 
         AudioClip minotaurGrowlClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Minotaur_Growl.mp3");
 
@@ -211,17 +214,186 @@ public class GameSetup : EditorWindow
             go.GetComponent<Renderer>().sharedMaterial = greenMat;
         });
         
-        GameObject speedPrefab = CreatePrefab("SpeedBoost", PrimitiveType.Sphere, (go) => {
-            go.GetComponent<SphereCollider>().isTrigger = true;
+        GameObject speedPrefab = CreatePrefab("SpeedBoost", PrimitiveType.Cube, (go) => {
+            // Remove default visual from root
+            Object.DestroyImmediate(go.GetComponent<MeshFilter>());
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>());
+
+            string fbxPath = "Assets/Mesh/speedboost.fbx";
+            
+            GameObject boostPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            
+            if (boostPrefab)
+            {
+                GameObject visual = Object.Instantiate(boostPrefab, go.transform);
+                visual.name = "Visual";
+                
+                // Standard transforms - Matching Compass style
+                visual.transform.localPosition = new Vector3(0, 0.242f, 0.126f);
+                visual.transform.localEulerAngles = new Vector3(-90, 0, 0);
+                visual.transform.localScale = new Vector3(80, 80, 80);
+
+                // Apply Material
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sharedMaterial = speedBoostMat;
+                
+                // SAFETY: Destroy any colliders on the visual model
+                var colliders = visual.GetComponentsInChildren<Collider>();
+                foreach (var c in colliders) Object.DestroyImmediate(c);
+            }
+            else
+            {
+                Debug.LogError($"SpeedBoost FBX not found at {fbxPath}");
+                // Fallback visual
+                GameObject debugVis = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                debugVis.transform.parent = go.transform;
+                debugVis.transform.localPosition = Vector3.zero;
+                debugVis.GetComponent<Renderer>().sharedMaterial = blueGlow;
+            }
+
+            // Add Particles
+            GameObject particles = new GameObject("Particles");
+            particles.transform.SetParent(go.transform, false);
+            particles.transform.localPosition = new Vector3(0, 0.5f, 0); 
+            
+            ParticleSystem ps = particles.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0f, 1f, 1f), new Color(0f, 0f, 1f)); // Cyan to Blue
+            main.startSize = 0.2f;
+            main.startLifetime = 1.5f;
+            main.startSpeed = 0.5f;
+            
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.4f;
+
+            var psr = particles.GetComponent<ParticleSystemRenderer>();
+            psr.material = blueGlow;
+
+            // Always add logic
+            go.GetComponent<BoxCollider>().isTrigger = true;
             go.AddComponent<SpeedBoost>();
-            go.GetComponent<Renderer>().sharedMaterial = blueGlow;
+        });
+        
+        GameObject flashbangPrefab = CreatePrefab("FlashBang", PrimitiveType.Cube, (go) => {
+             // Remove default visual from root
+            Object.DestroyImmediate(go.GetComponent<MeshFilter>());
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>());
+
+            string fbxPath = "Assets/Mesh/Flash.fbx";
+            
+            GameObject flashPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            
+            if (flashPrefab)
+            {
+                GameObject visual = Object.Instantiate(flashPrefab, go.transform);
+                visual.name = "Visual";
+                
+                // Standard transforms - Matching others
+                visual.transform.localPosition = new Vector3(0, 0.242f, 0.126f);
+                visual.transform.localEulerAngles = new Vector3(-90, 0, 0); // Requested Rotation
+                visual.transform.localScale = new Vector3(80, 80, 80);
+
+                // Apply Material
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sharedMaterial = whiteGlow;
+                
+                // SAFETY: Destroy any colliders on the visual model
+                var colliders = visual.GetComponentsInChildren<Collider>();
+                foreach (var c in colliders) Object.DestroyImmediate(c);
+            }
+            else
+            {
+                Debug.LogError($"Flash FBX not found at {fbxPath}");
+                // Fallback visual
+                GameObject debugVis = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                debugVis.transform.parent = go.transform;
+                debugVis.transform.localPosition = Vector3.zero;
+                debugVis.GetComponent<Renderer>().sharedMaterial = whiteGlow;
+            }
+
+            // Add Particles
+            GameObject particles = new GameObject("Particles");
+            particles.transform.SetParent(go.transform, false);
+            particles.transform.localPosition = new Vector3(0, 0.5f, 0); 
+            
+            ParticleSystem ps = particles.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            // White to Yellow-ish
+            main.startColor = new ParticleSystem.MinMaxGradient(Color.white, new Color(1f, 1f, 0.8f)); 
+            main.startSize = 0.2f;
+            main.startLifetime = 1.5f;
+            main.startSpeed = 0.5f;
+            
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.4f;
+
+            var psr = particles.GetComponent<ParticleSystemRenderer>();
+            psr.material = whiteGlow;
+
+            // Always add logic
+            go.GetComponent<BoxCollider>().isTrigger = true;
+            go.AddComponent<Flashbang>();
         });
 
         GameObject minimapPrefab = CreatePrefab("MinimapPickup", PrimitiveType.Cube, (go) => {
-            go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            // Remove default visual from root
+            Object.DestroyImmediate(go.GetComponent<MeshFilter>());
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>());
+
+            string fbxPath = "Assets/Mesh/Compass.fbx";
+            
+            GameObject compassPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
+            
+            if (compassPrefab)
+            {
+                GameObject visual = Object.Instantiate(compassPrefab, go.transform);
+                visual.name = "Visual";
+                
+                // Standard transforms
+                visual.transform.localPosition = new Vector3(0, 0.242f, 0.126f);
+                visual.transform.localEulerAngles = new Vector3(-90, 0, 0);
+                visual.transform.localScale = new Vector3(80, 80, 80);
+
+                // Apply Material (search for renderers)
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sharedMaterial = compassMat;
+                
+                // SAFETY: Destroy any colliders on the visual model to prevent interference
+                var colliders = visual.GetComponentsInChildren<Collider>();
+                foreach (var c in colliders) Object.DestroyImmediate(c);
+            }
+            else
+            {
+                Debug.LogError($"Compass FBX not found at {fbxPath}");
+                go.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+                // Note: Renderer was destroyed at start, so this might fail if we don't re-add it, 
+                // but for now we focus on the success case.
+            }
+
+            // Add Particles
+            GameObject particles = new GameObject("Particles");
+            particles.transform.SetParent(go.transform, false);
+            particles.transform.localPosition = new Vector3(0, 0.5f, 0); // Slightly raised
+            
+            ParticleSystem ps = particles.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.92f, 0.016f), new Color(0.5f, 0.25f, 0f)); // Yellow to Brown
+            main.startSize = 0.2f;
+            main.startLifetime = 1.5f;
+            main.startSpeed = 0.5f;
+            
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.4f;
+
+            var psr = particles.GetComponent<ParticleSystemRenderer>();
+            psr.material = brownGlow; // Reuse existing glowing material
+
+            // Always add logic
             go.GetComponent<BoxCollider>().isTrigger = true;
             go.AddComponent<MinimapPickup>();
-            go.GetComponent<Renderer>().sharedMaterial = brownGlow;
         });
 
         // 3. Setup Scene Objects
@@ -248,6 +420,7 @@ public class GameSetup : EditorWindow
         mgScript.minotaurPrefab = minotaurPrefab;
         mgScript.endTriggerPrefab = endPrefab;
         mgScript.speedBoostPrefab = speedPrefab;
+        mgScript.flashbangPrefab = flashbangPrefab;
         mgScript.minimapPrefab = minimapPrefab;
         mgScript.minimapPrefab = minimapPrefab;
         mgScript.cellSize = 4f;
