@@ -66,3 +66,40 @@ You can download the latest playable version here:
 (Windows x86_64 – Extract and run `MazeRunner.exe`)
 
 ---
+
+
+##  ML-Agents Setup (AI Training)
+
+### 1. Configuration Unity
+
+Ouvrez Unity (Le package ML-Agents va s'installer automatiquement au lancement).
+
+Sur votre **Prefab Player** (ou l'objet Player dans la scene) :
+1.  Ajoutez le composant MazeAgent.
+2.  Ajoutez le composant Decision Requester (**Decision Period**: 5).
+3.  Ajoutez le composant Ray Perception Sensor 3D.
+    *   **Detectable Tags** : Ajoutez Wall (assurez-vous que vos murs ont ce tag).
+4.  Dans le script MazeAgent, glissez l'objet **EndTrigger** dans le champ **Target**.
+5.  Assurez-vous que l'objet de fin (**EndTrigger**) a le Tag Finish.
+
+####  Correction Configuration ML-Agents
+Le nom par defaut dans Unity (My Behavior) peut causer des erreurs.
+
+Dans le composant **Behavior Parameters** :
+*   **Behavior Name** : MazeRunner (doit correspondre au fichier config).
+*   **Actions** :
+    *   **Continuous Actions** : Changez de 0 a **2** (Indispensable pour le mouvement).
+    *   **Discrete Branches** : 0.
+*   **Vector Observation** :
+    *   **Space Size** : Changez de 2 a **5**. 
+
+### 2. Lancer l'entrainement
+
+Ouvrez un terminal dans le dossier du projet et activez l'environnement virtuel.
+Ensuite, lancez la commande :
+
+`powershell
+.\venv\Scripts\mlagents-learn Config/maze_config.yaml --run-id=MazeRun2 --force
+` 
+
+Une fois le message Listening on port 5004 affiché, appuyez sur **Play** dans Unity.
