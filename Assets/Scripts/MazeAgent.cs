@@ -25,6 +25,12 @@ public class MazeAgent : Agent
         startRotation = transform.rotation;
         mazeGenerator = FindObjectOfType<MazeGenerator>();
 
+        if (target == null)
+        {
+            GameObject finishObj = GameObject.FindGameObjectWithTag("Finish");
+            if (finishObj) target = finishObj.transform;
+        }
+
         var playerControllerScript = GetComponent<PlayerController>();
         if (playerControllerScript != null)
         {

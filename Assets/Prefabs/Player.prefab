@@ -189,10 +189,11 @@ GameObject:
   - component: {fileID: 6628404151030165766}
   - component: {fileID: 6724634166004244380}
   - component: {fileID: 608342461726436535}
-  - component: {fileID: 4121525724119546893}
-  - component: {fileID: -1041962594048761280}
-  - component: {fileID: 2682553062504107059}
-  - component: {fileID: 6460395584385243320}
+  - component: {fileID: 2879815046988781768}
+  - component: {fileID: 8739553347366991056}
+  - component: {fileID: 238441065606694235}
+  - component: {fileID: 8586260432160057439}
+  - component: {fileID: 339972624854695453}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -341,7 +342,7 @@ MonoBehaviour:
   lookXLimit: 85
   canMove: 1
   isSprinting: 0
---- !u!114 &4121525724119546893
+--- !u!114 &2879815046988781768
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -355,7 +356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.DecisionRequester
   DecisionPeriod: 5
   TakeActionsBetweenDecisions: 1
---- !u!114 &-1041962594048761280
+--- !u!114 &8739553347366991056
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -385,7 +386,7 @@ MonoBehaviour:
   m_UseChildSensors: 1
   m_UseChildActuators: 1
   m_ObservableAttributeHandling: 0
---- !u!114 &2682553062504107059
+--- !u!114 &238441065606694235
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -401,9 +402,23 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  moveSpeed: 5
-  target: {fileID: 6037214534422665905, guid: b805effe6fed7574cac39048cd3804b9, type: 3}
---- !u!114 &6460395584385243320
+  moveSpeed: 8
+  target: {fileID: 0}
+--- !u!114 &8586260432160057439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8785312553200161399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.DecisionRequester
+  DecisionPeriod: 5
+  TakeActionsBetweenDecisions: 1
+--- !u!114 &339972624854695453
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -415,10 +430,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6bb6b867a41448888c1cd4f99643ad71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Sensors.RayPerceptionSensorComponent3D
-  m_SensorName: RayPerceptionSensor
+  m_SensorName: WallSensor
   m_DetectableTags:
   - Wall
   - Minotaur
+  - Finish
   m_RaysPerDirection: 3
   m_MaxRayDegrees: 60
   m_SphereCastRadius: 0.5

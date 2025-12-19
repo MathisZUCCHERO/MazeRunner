@@ -3,6 +3,9 @@ using UnityEditor;
 using UnityEngine.AI;
 using UnityEngine.UI;
 using System.IO;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Policies;
 
 public class GameSetup : EditorWindow
 {
@@ -11,6 +14,12 @@ public class GameSetup : EditorWindow
     {
         SetupStats("Beginning Scene Setup...");
         
+        SetupStats("Beginning Scene Setup...");
+        
+        // 0. Ensure Tags
+        EnsureTag("Wall");
+        EnsureTag("Finish");
+
         // 1. Create Prefabs Directory
         if (!Directory.Exists("Assets/Prefabs"))
             AssetDatabase.CreateFolder("Assets", "Prefabs");
@@ -22,6 +31,7 @@ public class GameSetup : EditorWindow
         Material dirtMat = FindMaterial("Dirt");
 
         GameObject wallPrefab = CreatePrefab("Wall", PrimitiveType.Cube, (go) => {
+            go.tag = "Wall";
             go.transform.localScale = new Vector3(1, 1, 1);
             var obs = go.AddComponent<NavMeshObstacle>();
             obs.carving = true;
@@ -46,6 +56,30 @@ public class GameSetup : EditorWindow
             cam.tag = "MainCamera";
             // Assign camera to script
             go.GetComponent<PlayerController>().playerCamera = cam.transform;
+
+            // --- ML-AGENTS SETUP ---
+            var agent = go.AddComponent<MazeAgent>();
+            agent.moveSpeed = 8f; // Slightly faster for training
+            
+            var dr = go.AddComponent<DecisionRequester>();
+            dr.DecisionPeriod = 5;
+            dr.TakeActionsBetweenDecisions = true;
+
+            var sensor = go.AddComponent<RayPerceptionSensorComponent3D>();
+            sensor.SensorName = "WallSensor";
+            sensor.DetectableTags = new System.Collections.Generic.List<string>() { "Wall", "Minotaur", "Finish" };
+            sensor.RaysPerDirection = 3;
+            sensor.MaxRayDegrees = 60;
+            sensor.SphereCastRadius = 0.5f;
+            sensor.RayLength = 20f;
+            sensor.ObservationStacks = 1;
+
+            var bp = go.GetComponent<BehaviorParameters>();
+            if (!bp) bp = go.AddComponent<BehaviorParameters>();
+            bp.BehaviorName = "MazeRunner";
+            bp.BrainParameters.VectorObservationSize = 5;
+            bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeContinuous(2);
+
 
             // Add Minimap Camera (Disabled by default, enabled by pickup)
             GameObject mapCam = new GameObject("MinimapCamera");
@@ -209,6 +243,7 @@ public class GameSetup : EditorWindow
         });
         
         GameObject endPrefab = CreatePrefab("EndTrigger", PrimitiveType.Cube, (go) => {
+            go.tag = "Finish";
             go.GetComponent<BoxCollider>().isTrigger = true;
             go.AddComponent<EndTrigger>();
             go.GetComponent<Renderer>().sharedMaterial = greenMat;
@@ -586,5 +621,29 @@ public class GameSetup : EditorWindow
         PlayerPrefs.DeleteKey("MazeLeaderboard");
         PlayerPrefs.Save();
         Debug.Log("Leaderboard Data Cleared!");
+        Debug.Log("Leaderboard Data Cleared!");
+    }
+
+    private static void EnsureTag(string tag)
+    {
+        Object[] asset = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+        if ((asset != null) && (asset.Length > 0))
+        {
+            SerializedObject so = new SerializedObject(asset[0]);
+            SerializedProperty tags = so.FindProperty("tags");
+
+            for (int i = 0; i < tags.arraySize; ++i)
+            {
+                if (tags.GetArrayElementAtIndex(i).stringValue == tag)
+                {
+                    return; // Tag already exists
+                }
+            }
+
+            tags.InsertArrayElementAtIndex(0);
+            tags.GetArrayElementAtIndex(0).stringValue = tag;
+            so.ApplyModifiedProperties();
+            so.Update();
+        }
     }
 }
