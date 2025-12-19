@@ -86,21 +86,13 @@ public class MinotaurAI : MonoBehaviour
     {
         Debug.Log("Minotaur Caught Player!");
 
-        // Training logic: check if caught object is our ML Agent
         if (target != null) 
         {
             MazeAgent mazeAgent = target.GetComponent<MazeAgent>();
             if (mazeAgent != null)
             {
-                 // Punish hard
                  mazeAgent.AddReward(-1.0f);
                  mazeAgent.EndEpisode(); 
-                 
-                 // Reset minotaur logic partially if needed, or simply return
-                 // Usually EndEpisode triggers agent reset which might reset scene or just agent
-                 // To prevent spamming catch, we can warp minotaur or wait for scene reset
-                 
-                 // IMPORTANT: Do NOT call GameManager.GameOver()
                  return;
             }
         }
