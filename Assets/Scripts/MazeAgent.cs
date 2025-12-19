@@ -17,6 +17,7 @@ public class MazeAgent : Agent
     private Vector3 startPosition;
     private Quaternion startRotation;
     private MazeGenerator mazeGenerator;
+    private MinotaurAI minotaur;
 
     public override void Initialize()
     {
@@ -44,6 +45,9 @@ public class MazeAgent : Agent
         transform.position = startPosition;
         transform.rotation = startRotation;
         characterController.enabled = true;
+
+        if (minotaur == null) minotaur = FindObjectOfType<MinotaurAI>();
+        if (minotaur != null) minotaur.ResetPosition();
     }
 
     public override void CollectObservations(VectorSensor sensor)

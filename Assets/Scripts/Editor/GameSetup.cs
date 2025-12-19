@@ -34,8 +34,7 @@ public class GameSetup : EditorWindow
         GameObject wallPrefab = CreatePrefab("Wall", PrimitiveType.Cube, (go) => {
             go.tag = "Wall";
             go.transform.localScale = new Vector3(1, 1, 1);
-            var obs = go.AddComponent<NavMeshObstacle>();
-            obs.carving = true;
+            // No NavMeshObstacle for static baking - NavMeshSurface will handle geometry
             if (brickMat) go.GetComponent<Renderer>().sharedMaterial = brickMat;
         });
 

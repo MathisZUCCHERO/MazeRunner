@@ -18,6 +18,12 @@ public class MinotaurAI : MonoBehaviour
     private bool isReady = false;
     private float lastPathUpdateTime = 0f;
     private Vector3 lastTargetPosition;
+    private Vector3 initialPosition;
+
+    void Awake()
+    {
+        initialPosition = transform.position;
+    }
 
     void Start()
     {
@@ -130,5 +136,14 @@ public class MinotaurAI : MonoBehaviour
         isReady = true;
         
         lastPathUpdateTime = 0f; 
+    }
+    public void ResetPosition()
+    {
+        if (agent != null)
+        {
+             agent.Warp(initialPosition);
+             agent.ResetPath();
+             lastTargetPosition = initialPosition;
+        }
     }
 }
