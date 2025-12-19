@@ -40,13 +40,10 @@ public class MazeAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        if (transform.position.y < -5)
-        {
-            characterController.enabled = false;
-            transform.position = startPosition;
-            transform.rotation = startRotation;
-            characterController.enabled = true;
-        }
+        characterController.enabled = false;
+        transform.position = startPosition;
+        transform.rotation = startRotation;
+        characterController.enabled = true;
     }
 
     public override void CollectObservations(VectorSensor sensor)

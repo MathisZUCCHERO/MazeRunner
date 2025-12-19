@@ -19,6 +19,7 @@ public class GameSetup : EditorWindow
         // 0. Ensure Tags
         EnsureTag("Wall");
         EnsureTag("Finish");
+        EnsureTag("Minotaur");
 
         // 1. Create Prefabs Directory
         if (!Directory.Exists("Assets/Prefabs"))
@@ -109,6 +110,7 @@ public class GameSetup : EditorWindow
         AudioClip minotaurGrowlClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Minotaur_Growl.mp3");
 
         GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Capsule, (go) => {
+            go.tag = "Minotaur";
             // 1. Setup Root (Agent + AI)
             var agent = go.AddComponent<NavMeshAgent>();
             agent.speed = 20f; // ULTRA Speed
