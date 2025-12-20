@@ -58,7 +58,7 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         isGameActive = false;
-        Time.timeScale = 0f; // Pause game
+        Time.timeScale = 0f;
         Debug.Log("Game Over! Caught by Minotaur.");
         
         if (LeaderboardUI.Instance != null)
@@ -70,7 +70,7 @@ public class GameManager : MonoBehaviour
     public void WinGame()
     {
         isGameActive = false;
-        Time.timeScale = 0f; // Pause game
+        Time.timeScale = 0f;
         Debug.Log($"You Escaped! Time: {gameTime:F2}s");
         
         if (LeaderboardUI.Instance != null)

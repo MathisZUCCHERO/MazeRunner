@@ -10,9 +10,9 @@ public class MinotaurAI : MonoBehaviour
     public float catchDistance = 2.0f;
 
     [Header("Pathfinding Settings")]
-    public float pathUpdateRate = 0.05f; // Fast updates for high speed tracking
+    public float pathUpdateRate = 0.05f;
     public float targetMoveThreshold = 0.5f;
-    public float startDelay = 0.1f; // No mercy - start immediately
+    public float startDelay = 0.1f;
 
     // Internal
     private NavMeshAgent agent;
@@ -29,7 +29,6 @@ public class MinotaurAI : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        // Re-enable auto movement for reliability at low speeds
         agent.updatePosition = true; 
         agent.updateRotation = true;
 

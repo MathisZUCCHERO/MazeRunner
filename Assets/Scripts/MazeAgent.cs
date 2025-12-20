@@ -12,7 +12,7 @@ public class MazeAgent : Agent
 {
     [Header("Agent Settings")]
     public float moveSpeed = 8f;
-    public float turnSpeed = 150f; // Reduced for better control (was 300)
+    public float turnSpeed = 150f;
     public Transform target;
     
     private CharacterController characterController;
@@ -68,7 +68,7 @@ public class MazeAgent : Agent
         navPath = new NavMeshPath();
         stuckTimer = 0f;
         lastPosCheck = transform.position;
-        if (target) lastDistanceToTarget = GetPathLengthToTarget(); // Use new helper
+        if (target) lastDistanceToTarget = GetPathLengthToTarget();
     }
     
     // Helper wrapper for initial distance
