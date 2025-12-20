@@ -80,6 +80,19 @@ public class GameSetup : EditorWindow
             bp.BrainParameters.VectorObservationSize = 8;
             bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeContinuous(2);
 
+            // BAKE BRAIN IF AVAILABLE
+            var model = AssetDatabase.LoadAssetAtPath<Unity.Barracuda.NNModel>("Assets/MazeRunner_Fixed.onnx");
+            if (model)
+            {
+                bp.Model = model;
+                bp.BehaviorType = BehaviorType.InferenceOnly;
+                Debug.Log("Brain Baked into Player Prefab!");
+            }
+            else
+            {
+                bp.BehaviorType = BehaviorType.Default; // Fallback to Heuristic/Training if no brain
+            }
+
 
             // Add Minimap Camera (Disabled by default, enabled by pickup)
             GameObject mapCam = new GameObject("MinimapCamera");
@@ -112,7 +125,7 @@ public class GameSetup : EditorWindow
             go.tag = "Minotaur";
             // 1. Setup Root (Agent + AI)
             var agent = go.AddComponent<NavMeshAgent>();
-            agent.speed = 20f; // ULTRA Speed
+            agent.speed = 7f; // Slower than player (8f) for fair chase
             agent.radius = 0.35f; 
             agent.height = 2.0f;
             agent.acceleration = 420f; // Instant response
@@ -462,12 +475,24 @@ public class GameSetup : EditorWindow
         mgScript.floorPrefab = floorPrefab;
         mgScript.playerPrefab = playerPrefab;
         mgScript.endTriggerPrefab = endPrefab;
-        mgScript.minotaurPrefab = minotaurPrefab; // THE BEAST IS BACK
+        mgScript.minotaurPrefab = minotaurPrefab;
         mgScript.speedBoostPrefab = speedPrefab;
         mgScript.loopChance = 0.2f;
         mgScript.speedBoostChance = 0.01f;
         mgScript.minimapCount = 1;
         mgScript.wallHeight = 10.0f;
+        
+        // Assign AI Model
+        var model = AssetDatabase.LoadAssetAtPath<Unity.Barracuda.NNModel>("Assets/MazeRunner_Fixed.onnx");
+        if (model)
+        {
+            mgScript.trainedModel = model;
+            Debug.Log("AI Model Assigned successfully!");
+        }
+        else
+        {
+            Debug.LogWarning("Could not find 'Assets/MazeRunner_Fixed.onnx'. AI will not be auto-equipped.");
+        }
 
         // UI
         GameObject canvasGO = GameObject.Find("Canvas");

@@ -378,13 +378,14 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 635132938ea8a314ca4e7175e23be058, type: 3}
   m_InferenceDevice: 0
-  m_BehaviorType: 0
+  m_BehaviorType: 2
   m_BehaviorName: MazeRunner
   TeamId: 0
   m_UseChildSensors: 1
   m_UseChildActuators: 1
+  m_DeterministicInference: 0
   m_ObservableAttributeHandling: 0
 --- !u!114 &238441065606694235
 MonoBehaviour:
@@ -444,6 +445,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967291
   m_ObservationStacks: 1
+  m_AlternatingRayOrder: 1
   rayHitColor: {r: 1, g: 0, b: 0, a: 1}
   rayMissColor: {r: 1, g: 1, b: 1, a: 1}
   m_StartVerticalOffset: 0

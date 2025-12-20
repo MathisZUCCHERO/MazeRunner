@@ -143,6 +143,9 @@ public class MazeGenerator : MonoBehaviour
         SpawnUnitsAndItems();
     }
 
+    [Header("AI Settings")]
+    public Unity.Barracuda.NNModel trainedModel;
+
     void SpawnUnitsAndItems()
     {
         GameObject playerObj = null;
@@ -151,6 +154,17 @@ public class MazeGenerator : MonoBehaviour
             playerObj = Instantiate(playerPrefab, new Vector3(0, 0.2f, 0), Quaternion.identity);
             playerObj.tag = "Player";
             playerObj.name = "Player_Spawned";
+
+            // AUTO-ASSIGN AI BRAIN
+            if (trainedModel != null)
+            {
+                var bp = playerObj.GetComponent<Unity.MLAgents.Policies.BehaviorParameters>();
+                if (bp)
+                {
+                    bp.Model = trainedModel;
+                    bp.BehaviorType = Unity.MLAgents.Policies.BehaviorType.InferenceOnly;
+                }
+            }
         }
 
         if (minotaurPrefab)
