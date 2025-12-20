@@ -2,31 +2,31 @@
     "MazeRunner": {
         "checkpoints": [
             {
-                "steps": 499988,
-                "file_path": "results\\RunHard\\MazeRunner\\MazeRunner-499988.onnx",
-                "reward": 1175.732080005464,
-                "creation_time": 1766163489.22575,
+                "steps": 499954,
+                "file_path": "results\\RunHard\\MazeRunner\\MazeRunner-499954.onnx",
+                "reward": 1000.9975703557333,
+                "creation_time": 1766219265.3787227,
                 "auxillary_file_paths": [
-                    "results\\RunHard\\MazeRunner\\MazeRunner-499988.pt"
+                    "results\\RunHard\\MazeRunner\\MazeRunner-499954.pt"
                 ]
             },
             {
-                "steps": 500052,
-                "file_path": "results\\RunHard\\MazeRunner\\MazeRunner-500052.onnx",
-                "reward": 1175.732080005464,
-                "creation_time": 1766163489.956602,
+                "steps": 500018,
+                "file_path": "results\\RunHard\\MazeRunner\\MazeRunner-500018.onnx",
+                "reward": 1000.9975703557333,
+                "creation_time": 1766219266.1130555,
                 "auxillary_file_paths": [
-                    "results\\RunHard\\MazeRunner\\MazeRunner-500052.pt"
+                    "results\\RunHard\\MazeRunner\\MazeRunner-500018.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 500052,
+            "steps": 500018,
             "file_path": "results\\RunHard\\MazeRunner.onnx",
-            "reward": 1175.732080005464,
-            "creation_time": 1766163489.956602,
+            "reward": 1000.9975703557333,
+            "creation_time": 1766219266.1130555,
             "auxillary_file_paths": [
-                "results\\RunHard\\MazeRunner\\MazeRunner-500052.pt"
+                "results\\RunHard\\MazeRunner\\MazeRunner-500018.pt"
             ]
         }
     },

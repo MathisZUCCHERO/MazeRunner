@@ -380,7 +380,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 5022602860645237092, guid: 635132938ea8a314ca4e7175e23be058, type: 3}
   m_InferenceDevice: 0
-  m_BehaviorType: 2
+  m_BehaviorType: 0
   m_BehaviorName: MazeRunner
   TeamId: 0
   m_UseChildSensors: 1
@@ -438,7 +438,7 @@ MonoBehaviour:
   - Minotaur
   - Finish
   m_RaysPerDirection: 3
-  m_MaxRayDegrees: 60
+  m_MaxRayDegrees: 120
   m_SphereCastRadius: 0.5
   m_RayLength: 20
   m_RayLayerMask:

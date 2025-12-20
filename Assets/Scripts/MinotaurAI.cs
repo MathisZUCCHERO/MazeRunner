@@ -10,9 +10,9 @@ public class MinotaurAI : MonoBehaviour
     public float catchDistance = 2.0f;
 
     [Header("Pathfinding Settings")]
-    public float pathUpdateRate = 0.2f; 
+    public float pathUpdateRate = 0.05f; // Fast updates for high speed tracking
     public float targetMoveThreshold = 0.5f;
-    public float startDelay = 5.0f; // Give the player a head start
+    public float startDelay = 0.1f; // No mercy - start immediately
 
     // Internal
     private NavMeshAgent agent;
@@ -29,7 +29,10 @@ public class MinotaurAI : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        agent.autoBraking = false; 
+        // Re-enable auto movement for reliability at low speeds
+        agent.updatePosition = true; 
+        agent.updateRotation = true;
+
         StartCoroutine(InitializeRoutine());
     }
 
@@ -55,38 +58,22 @@ public class MinotaurAI : MonoBehaviour
         }
 
         if (target != null) lastTargetPosition = target.position;
-
-        yield return new WaitForSeconds(startDelay); // Wait before chasing
-
+        
         isReady = true;
-        Debug.Log("[MinotaurAI] Ready!");
+        Debug.Log("[MinotaurAI] Ready and Charging!");
     }
 
     void Update()
     {
         if (!isReady || target == null) return;
 
-        // --- 1. Logique de Déplacement ---
-        if (Time.time >= lastPathUpdateTime + pathUpdateRate)
+        if (agent.isOnNavMesh)
         {
-            if (!agent.pathPending)
-            {
-                float distanceMoved = Vector3.Distance(target.position, lastTargetPosition);
-                // Si remainingDistance est très petit, c'est qu'on a fini le chemin précédent
-                bool reachedDestination = agent.remainingDistance < 0.5f;
-
-                if (distanceMoved > targetMoveThreshold || !agent.hasPath || reachedDestination)
-                {
-                    agent.SetDestination(target.position);
-                    lastTargetPosition = target.position;
-                    lastPathUpdateTime = Time.time;
-                }
-            }
+            agent.SetDestination(target.position);
         }
 
-        if (!agent.pathPending && agent.hasPath && agent.remainingDistance <= catchDistance)
+        if (!agent.pathPending && agent.remainingDistance <= catchDistance)
         {
-            Debug.Log("Minotaur is at " + agent.remainingDistance + " the catchDistance is " + catchDistance);
              CatchPlayer();
         }
     }

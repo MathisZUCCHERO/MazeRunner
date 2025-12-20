@@ -5,13 +5,7 @@ import glob
 import os
 
 # 1. Find the latest file
-search_path = "results/RunHard/MazeRunner/*.onnx"
-files = glob.glob(search_path)
-if not files:
-    print("No ONNX file found!")
-    exit(1)
-
-latest_file = max(files, key=os.path.getctime)
+latest_file = "results/RunSmart_v2/MazeRunner/MazeRunner-500042.onnx"
 output_file = "Assets/MazeRunner_Fixed.onnx"
 
 print(f"Loading: {latest_file} (Opset 18)")

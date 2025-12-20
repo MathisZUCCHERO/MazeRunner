@@ -7,8 +7,8 @@ using Unity.AI.Navigation;
 public class MazeGenerator : MonoBehaviour
 {
     [Header("Maze Settings")]
-    public int width = 40;
-    public int height = 40;
+    public int width = 20; // Reduced for easier validation
+    public int height = 20;
     public float cellSize = 4f;
 
     [Range(0f, 1f)]
@@ -162,7 +162,7 @@ public class MazeGenerator : MonoBehaviour
                 if (bp)
                 {
                     bp.Model = trainedModel;
-                    bp.BehaviorType = Unity.MLAgents.Policies.BehaviorType.InferenceOnly;
+                    bp.BehaviorType = Unity.MLAgents.Policies.BehaviorType.Default; // Default allows Training
                 }
             }
         }

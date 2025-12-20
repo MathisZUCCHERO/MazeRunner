@@ -85,19 +85,13 @@ public class MazeAgent : Agent
     {
         if (target != null)
         {
-            // 1. Target Position (LOCAL SPACE)
-            // Agent needs to know where target is relative to its current facing direction
             Vector3 toTarget = target.position - transform.position;
             Vector3 localToTarget = transform.InverseTransformDirection(toTarget);
             
-            // Dynamic Normalization: Use actual maze size + margin buffer
-            // We use the larger dimension to keep aspect ratio consistent if maze is non-square
-            float normFactor = Mathf.Max(mazeGenerator.width, mazeGenerator.height) * 4.0f; // cellSize(4) * size
-            
+            float normFactor = Mathf.Max(mazeGenerator.width, mazeGenerator.height) * 4.0f;
             sensor.AddObservation(localToTarget.x / normFactor); 
             sensor.AddObservation(localToTarget.z / normFactor);
 
-            // 2. GPS (LOCAL SPACE Direction)
             if (NavMesh.CalculatePath(transform.position, target.position, NavMesh.AllAreas, navPath))
             {
                 if (navPath.corners.Length > 1)
@@ -107,19 +101,15 @@ public class MazeAgent : Agent
                     
                     sensor.AddObservation(localDir.x);
                     sensor.AddObservation(localDir.z);
-                    
-                    // Debug Draw
-                    for (int i = 0; i < navPath.corners.Length - 1; i++)
-                        Debug.DrawLine(navPath.corners[i], navPath.corners[i + 1], Color.green);
                 }
                 else
                 {
-                    sensor.AddObservation(Vector2.zero); // On top of target?
+                    sensor.AddObservation(Vector2.zero); 
                 }
             }
             else
             {
-                sensor.AddObservation(Vector2.zero); // No path found
+                sensor.AddObservation(Vector2.zero);
             }
         }
         else
@@ -128,7 +118,6 @@ public class MazeAgent : Agent
             sensor.AddObservation(Vector2.zero); 
         }
 
-        // 3. Wall Follow (Right Hand Rule) with Corner Handling (LOCAL SPACE)
         RaycastHit hitRight;
         RaycastHit hitFront;
         Vector3 rightDir = transform.right;
@@ -144,19 +133,14 @@ public class MazeAgent : Agent
 
                 if (frontBlocked)
                 {
-                    // CORNER: Turn Left
                     suggestedWorldDir = -transform.right;
-                    Debug.DrawRay(transform.position, suggestedWorldDir * 2f, Color.magenta); 
                 }
                 else
                 {
-                    // FOLLOW: Tangent
                     suggestedWorldDir = Vector3.Cross(hitRight.normal, Vector3.up).normalized;
                     if (Vector3.Dot(transform.forward, suggestedWorldDir) < 0) suggestedWorldDir = -suggestedWorldDir;
-                    Debug.DrawRay(transform.position, suggestedWorldDir * 2f, Color.cyan);
                 }
                 
-                // Convert to Local for the brain
                 Vector3 localSuggested = transform.InverseTransformDirection(suggestedWorldDir);
                 sensor.AddObservation(localSuggested.x);
                 sensor.AddObservation(localSuggested.z);
@@ -171,7 +155,6 @@ public class MazeAgent : Agent
              sensor.AddObservation(Vector2.zero);
         }
 
-        // Velocity (Already Local)
         Vector3 localVelocity = transform.InverseTransformDirection(characterController.velocity);
         sensor.AddObservation(localVelocity.x / moveSpeed);
         sensor.AddObservation(localVelocity.z / moveSpeed);
@@ -179,36 +162,24 @@ public class MazeAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
-        // TANK CONTROLS
-        // Action 0: Rotate (-1 to 1)
-        // Action 1: Forward (0 to 1) - We force positive
-        
         float rotateAction = actionBuffers.ContinuousActions[0];
         float forwardAction = actionBuffers.ContinuousActions[1]; 
 
-        // 1. Rotation
         transform.Rotate(0, rotateAction * turnSpeed * Time.deltaTime, 0);
 
-        // 2. Drive Forward (Always moving)
-        // Clamp to ensure minimum speed (e.g. 50% max speed minimum)
         float moveForward = Mathf.Clamp(forwardAction, 0.5f, 1.0f); 
 
         Vector3 move = transform.forward * moveForward;
         characterController.Move(move * moveSpeed * Time.deltaTime);
 
-        // REWARDS
-        // 1. Time Penalty (Small)
         AddReward(-0.0005f); 
 
-        // 2. True Path Distance Reward (The "Breadcrumb" Strategy)
         if (target && NavMesh.CalculatePath(transform.position, target.position, NavMesh.AllAreas, navPath) && navPath.status == NavMeshPathStatus.PathComplete)
         {
             float currentPathDist = GetPathLength(navPath);
             float diff = lastDistanceToTarget - currentPathDist;
             
-            // Huge reward for solving the path, huge penalty for backtracking
-            // We clamp it to avoid crazy spikes if path recalculation jumps, but generally we want strict guidance.
-            if (Mathf.Abs(diff) < 5.0f) // Sanity check to ignore teleporting/reset spikes
+            if (Mathf.Abs(diff) < 5.0f) 
             {
                AddReward(diff * 5.0f); 
             }
@@ -217,13 +188,11 @@ public class MazeAgent : Agent
         }
         else
         {
-           // Fallback to Euclidean if path fails (rare in valid maze)
            float currentDist = Vector3.Distance(transform.position, target.position);
            lastDistanceToTarget = currentDist;
         }
     }
     
-    // Helper to calculate actual length of the NavMesh path
     float GetPathLength(NavMeshPath path)
     {
         float length = 0f;
@@ -239,8 +208,8 @@ public class MazeAgent : Agent
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Horizontal"); // Turn
-        continuousActionsOut[1] = Input.GetAxis("Vertical");   // Forward
+        continuousActionsOut[0] = Input.GetAxis("Horizontal");
+        continuousActionsOut[1] = Input.GetAxis("Vertical");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -260,14 +229,13 @@ public class MazeAgent : Agent
             EndEpisode();
         }
 
-        // Anti-Stuck Logic
         if (Vector3.Distance(transform.position, lastPosCheck) < 0.1f)
         {
             stuckTimer += Time.deltaTime;
-            if (stuckTimer > 3.0f) // Stuck for 3 seconds
+            if (stuckTimer > 3.0f)
             {
-                AddReward(-0.5f); // Penalty for being lazy/stuck
-                EndEpisode(); // Force reset
+                AddReward(-0.5f);
+                EndEpisode();
             }
         }
         else

@@ -1,0 +1,38 @@
+{
+    "MazeRunner": {
+        "checkpoints": [
+            {
+                "steps": 499960,
+                "file_path": "results\\RunRealistic\\MazeRunner\\MazeRunner-499960.onnx",
+                "reward": 782.7015664166418,
+                "creation_time": 1766230224.2771585,
+                "auxillary_file_paths": [
+                    "results\\RunRealistic\\MazeRunner\\MazeRunner-499960.pt"
+                ]
+            },
+            {
+                "steps": 500024,
+                "file_path": "results\\RunRealistic\\MazeRunner\\MazeRunner-500024.onnx",
+                "reward": 782.7015664166418,
+                "creation_time": 1766230225.2000837,
+                "auxillary_file_paths": [
+                    "results\\RunRealistic\\MazeRunner\\MazeRunner-500024.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 500024,
+            "file_path": "results\\RunRealistic\\MazeRunner.onnx",
+            "reward": 782.7015664166418,
+            "creation_time": 1766230225.2000837,
+            "auxillary_file_paths": [
+                "results\\RunRealistic\\MazeRunner\\MazeRunner-500024.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.9.1+cpu"
+    }
+}

@@ -69,7 +69,8 @@ public class GameSetup : EditorWindow
             sensor.SensorName = "WallSensor";
             sensor.DetectableTags = new System.Collections.Generic.List<string>() { "Wall", "Minotaur", "Finish" };
             sensor.RaysPerDirection = 3;
-            sensor.MaxRayDegrees = 60;
+            sensor.MaxRayDegrees = 120; // WIDENED VISION (Was 60) - Compatible change? 
+            // Note: Changing angles doesn't change tensor size, only changing Ray Count does.
             sensor.SphereCastRadius = 0.5f;
             sensor.RayLength = 20f;
             sensor.ObservationStacks = 1;
@@ -77,7 +78,7 @@ public class GameSetup : EditorWindow
             var bp = go.GetComponent<BehaviorParameters>();
             if (!bp) bp = go.AddComponent<BehaviorParameters>();
             bp.BehaviorName = "MazeRunner";
-            bp.BrainParameters.VectorObservationSize = 8;
+            bp.BrainParameters.VectorObservationSize = 8; // REVERTED TO 8 (Compatible with RunPhase2)
             bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeContinuous(2);
 
             // BAKE BRAIN IF AVAILABLE
@@ -85,12 +86,12 @@ public class GameSetup : EditorWindow
             if (model)
             {
                 bp.Model = model;
-                bp.BehaviorType = BehaviorType.InferenceOnly;
-                Debug.Log("Brain Baked into Player Prefab!");
+                bp.BehaviorType = BehaviorType.Default; 
             }
             else
             {
-                bp.BehaviorType = BehaviorType.Default; // Fallback to Heuristic/Training if no brain
+                bp.Model = null; // Ensure we don't hold onto old refs
+                bp.BehaviorType = BehaviorType.Default; 
             }
 
 
@@ -124,12 +125,12 @@ public class GameSetup : EditorWindow
         GameObject minotaurPrefab = CreatePrefab("Minotaur", PrimitiveType.Capsule, (go) => {
             go.tag = "Minotaur";
             // 1. Setup Root (Agent + AI)
-            var agent = go.AddComponent<NavMeshAgent>();
-            agent.speed = 7f; // Slower than player (8f) for fair chase
-            agent.radius = 0.35f; 
+            NavMeshAgent agent = go.AddComponent<NavMeshAgent>();
+            agent.speed = 5f; // VALIDATION MODE - Slower than Player (8f)
+            agent.radius = 0.4f; 
             agent.height = 2.0f;
-            agent.acceleration = 420f; // Instant response
-            agent.angularSpeed = 400f; // Instant turning
+            agent.acceleration = 60f; // Standard acceleration
+            agent.angularSpeed = 360f; // Standard turning
             agent.autoBraking = false; 
             agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
             
