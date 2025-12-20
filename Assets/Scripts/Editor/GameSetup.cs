@@ -77,7 +77,7 @@ public class GameSetup : EditorWindow
             var bp = go.GetComponent<BehaviorParameters>();
             if (!bp) bp = go.AddComponent<BehaviorParameters>();
             bp.BehaviorName = "MazeRunner";
-            bp.BrainParameters.VectorObservationSize = 5;
+            bp.BrainParameters.VectorObservationSize = 8;
             bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeContinuous(2);
 
 
@@ -245,7 +245,9 @@ public class GameSetup : EditorWindow
         
         GameObject endPrefab = CreatePrefab("EndTrigger", PrimitiveType.Cube, (go) => {
             go.tag = "Finish";
-            go.GetComponent<BoxCollider>().isTrigger = true;
+            var bc = go.GetComponent<BoxCollider>();
+            bc.isTrigger = true;
+            bc.size = new Vector3(3f, 3f, 3f); // HUGE HITBOX (3x3 in a 4x4 cell)
             go.AddComponent<EndTrigger>();
             go.GetComponent<Renderer>().sharedMaterial = greenMat;
         });
@@ -449,22 +451,23 @@ public class GameSetup : EditorWindow
         if (!surface) surface = mg.AddComponent<Unity.AI.Navigation.NavMeshSurface>();
         surface.collectObjects = Unity.AI.Navigation.CollectObjects.Children;
         
+        // Maze Settings (Hard Mode - Phase 3 Final)
+        mgScript.width = 40;
+        mgScript.height = 40;
+        mgScript.cellSize = 4;
+        mgScript.loopChance = 0.2f;
+
         // Assign Prefabs
         mgScript.wallPrefab = wallPrefab;
         mgScript.floorPrefab = floorPrefab;
         mgScript.playerPrefab = playerPrefab;
-        mgScript.minotaurPrefab = minotaurPrefab;
         mgScript.endTriggerPrefab = endPrefab;
+        mgScript.minotaurPrefab = minotaurPrefab; // THE BEAST IS BACK
         mgScript.speedBoostPrefab = speedPrefab;
-        mgScript.flashbangPrefab = flashbangPrefab;
-        mgScript.minimapPrefab = minimapPrefab;
-        mgScript.minimapPrefab = minimapPrefab;
-        mgScript.cellSize = 4f;
-        mgScript.width = 40;
-        mgScript.height = 40;
-        mgScript.wallHeight = 10.0f;
+        mgScript.loopChance = 0.2f;
         mgScript.speedBoostChance = 0.01f;
         mgScript.minimapCount = 1;
+        mgScript.wallHeight = 10.0f;
 
         // UI
         GameObject canvasGO = GameObject.Find("Canvas");

@@ -12,6 +12,7 @@ public class MinotaurAI : MonoBehaviour
     [Header("Pathfinding Settings")]
     public float pathUpdateRate = 0.2f; 
     public float targetMoveThreshold = 0.5f;
+    public float startDelay = 5.0f; // Give the player a head start
 
     // Internal
     private NavMeshAgent agent;
@@ -54,6 +55,8 @@ public class MinotaurAI : MonoBehaviour
         }
 
         if (target != null) lastTargetPosition = target.position;
+
+        yield return new WaitForSeconds(startDelay); // Wait before chasing
 
         isReady = true;
         Debug.Log("[MinotaurAI] Ready!");

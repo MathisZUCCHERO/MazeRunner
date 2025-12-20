@@ -102,4 +102,34 @@ Ensuite, lancez la commande :
 .\venv\Scripts\mlagents-learn Config/maze_config.yaml --run-id=MazeRun2 --force
 ` 
 
-Une fois le message Listening on port 5004 affiché, appuyez sur **Play** dans Unity.
+### 3. Utiliser l'IA (Mode Inférence / Production)
+
+Une fois l'entraînement "Hard" terminé :
+
+1.  Allez dans le dossier `results/RunHard/MazeRunner`.
+2.  Trouvez le fichier **.onnx** (ex: `MazeRunner-xxxx.onnx`).
+3.  Glissez ce fichier dans Unity (dossier `Assets/Models` par exemple).
+4.  Sélectionnez votre **Player**.
+5.  Dans le composant **Behavior Parameters**, trouvez le champ **Model**.
+6.  Glissez votre fichier `.onnx` dans ce champ.
+7.  **IMPORTANT** : Dans `Behavior Parameters`, assurez-vous que **Behavior Type** est sur **Inference Only** (ou Default).
+
+### 4. Mode Spectateur (Demo)
+
+Pour apprécier le spectacle :
+1.  Lancez le jeu.
+2.  L'IA contrôlera le joueur.
+3.  Vous pouvez juste regarder comment elle esquive le Minotaure et résout le labyrinthe ! 🍿
+
+L'IA jouera toute seule avec le cerveau qu'elle a entraîné ! 🧠✨
+
+### 4. Revenir au Jeu Normal (Hard Mode)
+
+Pour tester l'IA dans les vraies conditions :
+1.  Ouvrez `Assets/Scripts/Editor/GameSetup.cs`.
+2.  Modifiez les lignes 460-466 pour remettre :
+    *   `width = 40`
+    *   `height = 40`
+    *   `minotaurPrefab = minotaurPrefab` (Retirer le `null`)
+3.  Lancez **Maze Game > Setup Scene**.
+4.  Lancez le jeu et regardez l'IA survivre !

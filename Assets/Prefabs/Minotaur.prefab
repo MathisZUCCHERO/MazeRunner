@@ -225,6 +225,7 @@ MonoBehaviour:
   catchDistance: 2
   pathUpdateRate: 0.2
   targetMoveThreshold: 0.5
+  startDelay: 5
 --- !u!82 &4530831800342225152
 AudioSource:
   m_ObjectHideFlags: 0
